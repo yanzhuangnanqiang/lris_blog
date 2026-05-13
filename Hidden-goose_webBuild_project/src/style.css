@@ -1,0 +1,24 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+html, body, #app {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  font-family: 'Helvetica Neue', 'Arial', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+}
+
+:root {
+  /* 黛尾花色板 */
+  --iris-purple: #7d8a9e;       /* 鸢尾紫 - 主色 */
+  --night-indigo: #4a5360;      /* 夜靛 - 强调 */
+  --cold-white: #dce6f0;        /* 冷白带蓝 - 高亮文字 */
+  --pale-cyan: #edf0f3;         /* 极淡黛青 - 底色 */
+  --deep-night: #1e2a32;        /* 深靛 - 重点文字 */
+  --glass-bg: rgba(220, 230, 240, 0.12);
+  --glass-border: rgba(220, 230, 240, 0.2);
+  --glass-blur: blur(12px);
+  --text-shadow: 0 0 15px rgba(0, 0, 0, 0.5);
+}
