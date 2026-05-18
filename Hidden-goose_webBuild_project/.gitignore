@@ -14,6 +14,14 @@ dist-ssr
 coverage
 *.local
 
+# 环境变量 — 防止 API Key 泄露
+.env
+.env.*
+!.env.example
+
+# Claude Code 项目级本地配置
+.claude/*.local.json
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
