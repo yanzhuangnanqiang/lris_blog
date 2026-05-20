@@ -1,25 +1,34 @@
 <template>
   <a class="icon-link" :href="url" target="_blank" rel="noreferrer">
-    <div class="icon">{{ fallbackIcon }}</div>
+    <div class="icon">
+      <img :src="iconSrc" :alt="name" />
+    </div>
     <div class="name">{{ name }}</div>
   </a>
 </template>
 
 <script setup>
+import { computed } from 'vue'
+
+import githubIcon from '@/assets/github.svg'
+import bilibiliIcon from '@/assets/bilibili.svg'
+import mailIcon from '@/assets/mail.svg'
+import notebookIcon from '@/assets/notebook.svg'
+
 const props = defineProps({
   name: { type: String, required: true },
-  icon: { type: String, required: true }, // github / bilibili / mail / ...
+  icon: { type: String, required: true },
   url: { type: String, required: true },
 })
 
-const fallbackMap = {
-  github: '⌂',
-  bilibili: '▶',
-  mail: '✉',
-  notebook: '📖',
+const iconMap = {
+  github: githubIcon,
+  bilibili: bilibiliIcon,
+  mail: mailIcon,
+  notebook: notebookIcon,
 }
 
-const fallbackIcon = fallbackMap[props.icon] ?? '•'
+const iconSrc = computed(() => iconMap[props.icon] ?? iconMap.github)
 </script>
 
 <style scoped>
@@ -55,5 +64,11 @@ const fallbackIcon = fallbackMap[props.icon] ?? '•'
 .icon-link:hover .icon {
   background: rgba(220, 230, 240, 0.18);
   transform: translateY(-1px);
+}
+
+.icon img {
+  width: 22px;
+  height: 22px;
+  display: block;
 }
 </style>

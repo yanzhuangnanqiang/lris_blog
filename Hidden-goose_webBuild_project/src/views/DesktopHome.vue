@@ -33,7 +33,7 @@
         <div class="hint">向下滑动</div>
       </section>
 
-      <!-- 第2屏：随想/诗句 -->
+      <!-- 第2屏：随想/诗句 + 时间线 -->
       <section class="screen thoughts">
         <div class="glass-bg"></div>
 
@@ -45,6 +45,47 @@
               <div class="from" v-if="t.from">{{ t.from }}</div>
             </div>
           </div>
+
+          <h2 class="t-title timeline-heading">时间线</h2>
+          <div class="timeline">
+            <div v-for="(item, i) in timeline" :key="i" class="tl-item">
+              <div class="tl-dot"></div>
+              <div class="tl-card">
+                <div class="tl-date">{{ item.date }}</div>
+                <div class="tl-title">{{ item.title }}</div>
+                <div class="tl-content">{{ item.content }}</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 第3屏：精选项目 -->
+      <section class="screen projects">
+        <div class="glass-bg"></div>
+
+        <div class="thoughts-inner">
+          <h2 class="t-title">项目</h2>
+          <div class="sub">来自 GitHub：yanzhuangnanqiang</div>
+
+          <div class="cards">
+            <a
+              v-for="(p, i) in featuredProjects"
+              :key="i"
+              class="card proj-card"
+              :href="p.url"
+              target="_blank"
+              rel="noreferrer"
+            >
+              <div class="proj-name">{{ p.name }}</div>
+              <div class="text">{{ p.desc }}</div>
+              <div class="proj-lang" v-if="p.lang">{{ p.lang }}</div>
+            </a>
+          </div>
+
+          <router-link class="more-link" to="/projects">
+            查看全部项目 →
+          </router-link>
         </div>
       </section>
     </div>
@@ -58,6 +99,8 @@ import BackgroundWallpaper from '@/components/BackgroundWallpaper.vue'
 import IconLink from '@/components/app/IconLink.vue'
 import { contacts } from '@/data/contacts'
 import { thoughts } from '@/data/thoughts'
+import { timeline } from '@/data/timeline'
+import { featuredProjects } from '@/data/projects'
 </script>
 
 <style scoped>
@@ -141,7 +184,8 @@ import { thoughts } from '@/data/thoughts'
 
 .thoughts {
   background: transparent;
-  overflow: hidden;
+  min-height: 100vh;
+  overflow: visible;
 }
 
 .glass-bg {
@@ -192,6 +236,134 @@ import { thoughts } from '@/data/thoughts'
   margin-top: 10px;
   font-size: 0.82rem;
   opacity: 0.7;
+}
+
+.timeline-heading {
+  margin-top: 36px;
+}
+
+.timeline {
+  margin-top: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  position: relative;
+  padding-left: 20px;
+}
+
+.timeline::before {
+  content: '';
+  position: absolute;
+  left: 7px;
+  top: 8px;
+  bottom: 8px;
+  width: 1px;
+  background: rgba(220, 230, 240, 0.2);
+}
+
+.tl-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  padding: 12px 0;
+  position: relative;
+  animation: pop 500ms ease both;
+}
+
+.tl-dot {
+  flex-shrink: 0;
+  width: 15px;
+  height: 15px;
+  border-radius: 999px;
+  background: var(--iris-purple);
+  border: 2px solid rgba(220, 230, 240, 0.35);
+  margin-top: 4px;
+  z-index: 1;
+}
+
+.tl-card {
+  flex: 1;
+  padding: 12px 16px;
+  border-radius: 14px;
+  background: rgba(220, 230, 240, 0.08);
+  border: 1px solid rgba(220, 230, 240, 0.12);
+  backdrop-filter: blur(8px);
+  transition: 0.2s;
+}
+
+.tl-card:hover {
+  background: rgba(220, 230, 240, 0.12);
+}
+
+.tl-date {
+  font-size: 0.78rem;
+  opacity: 0.6;
+  letter-spacing: 1px;
+}
+
+.tl-title {
+  font-size: 1rem;
+  margin-top: 4px;
+  color: #fff;
+}
+
+.tl-content {
+  font-size: 0.88rem;
+  margin-top: 6px;
+  opacity: 0.8;
+  line-height: 1.6;
+}
+
+.projects {
+  background: transparent;
+  min-height: 100vh;
+  overflow: visible;
+  padding-bottom: 40px;
+}
+
+.sub {
+  margin-top: 8px;
+  opacity: 0.65;
+  font-size: 0.9rem;
+}
+
+.proj-name {
+  font-size: 1.05rem;
+  color: #fff;
+}
+
+.proj-card {
+  text-decoration: none;
+  color: inherit;
+  display: block;
+}
+
+.proj-card:hover {
+  background: rgba(220, 230, 240, 0.14);
+  transform: translateY(-1px);
+}
+
+.proj-lang {
+  margin-top: 10px;
+  font-size: 0.8rem;
+  opacity: 0.65;
+}
+
+.more-link {
+  display: inline-block;
+  margin-top: 20px;
+  padding: 8px 20px;
+  border-radius: 14px;
+  background: rgba(220, 230, 240, 0.08);
+  border: 1px solid rgba(220, 230, 240, 0.15);
+  color: rgba(220, 230, 240, 0.9);
+  text-decoration: none;
+  font-size: 0.9rem;
+  transition: 0.2s;
+}
+
+.more-link:hover {
+  background: rgba(220, 230, 240, 0.14);
 }
 
 @keyframes pop {
