@@ -34,9 +34,10 @@ function randomStyle() {
 .petal {
   position: absolute;
   top: -5%;
-  background: rgba(125, 138, 158, 0.6);
+  background: rgba(214, 232, 214, 0.55);
   border-radius: 50% 0 50% 50%;
   transform: rotate(45deg);
+  box-shadow: 0 0 8px rgba(214, 232, 214, 0.4);
   animation: fall linear infinite;
 }
 @keyframes fall {

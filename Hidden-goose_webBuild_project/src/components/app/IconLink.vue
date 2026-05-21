@@ -38,7 +38,7 @@ const iconSrc = computed(() => iconMap[props.icon] ?? iconMap.github)
   place-items: center;
   gap: 6px;
   width: 70px;
-  color: rgba(220, 230, 240, 0.9);
+  color: rgba(255,255,255,0.8);
   user-select: none;
 }
 
@@ -48,22 +48,28 @@ const iconSrc = computed(() => iconMap[props.icon] ?? iconMap.github)
   border-radius: 999px;
   display: grid;
   place-items: center;
-
-  background: rgba(220, 230, 240, 0.12);
-  border: 1px solid rgba(220, 230, 240, 0.18);
+  background: rgba(255,255,255,0.1);
+  border: 1px solid rgba(255,255,255,0.15);
   backdrop-filter: blur(12px);
-
-  transition: 0.2s;
+  transition: 0.3s ease;
 }
 
 .name {
   font-size: 0.8rem;
-  opacity: 0.85;
+  opacity: 0.8;
+  transition: 0.3s ease;
 }
 
 .icon-link:hover .icon {
-  background: rgba(220, 230, 240, 0.18);
-  transform: translateY(-1px);
+  background: rgba(180, 220, 180, 0.35);
+  border-color: rgba(180, 220, 180, 0.5);
+  transform: scale(1.12);
+  box-shadow: 0 0 16px rgba(180, 220, 180, 0.25);
+}
+
+.icon-link:hover .name {
+  opacity: 1;
+  color: rgba(180, 220, 180, 0.9);
 }
 
 .icon img {

@@ -4,88 +4,89 @@
     <MusicDock />
 
     <div class="scroller">
-      <!-- 第1屏：欢迎 + 闲聊 + 联系方式 + 手账入口 -->
-      <section class="screen hero">
-        <BackgroundWallpaper image-src="xiaguang.jpg" />
-
-        <div class="center">
-          <div class="hello">欢迎光临</div>
-          <div class="chat">
-            初次见面。你可以在这里看看我的随想、计划、项目与手帐。
-            如果你愿意，也可以点左下角的方式联系我。
-          </div>
+      <!-- Hero -->
+      <section class="hero">
+        <div class="hero-bg" :class="{ loaded: heroLoaded }" :style="{ backgroundImage: `url(${heroBg})` }">
+          <img :src="heroBg" class="preload" @load="heroLoaded = true" />
         </div>
+        <PetalEffect />
 
-        <div class="left-bottom">
-          <IconLink
-            v-for="c in contacts"
-            :key="c.name"
-            :name="c.name"
-            :icon="c.icon"
-            :url="c.url"
-          />
-        </div>
+        <div class="hero-content" :class="{ fading: scrollProgress > 0.3 }">
+          <h1 class="hero-title" :style="{ color: titleColor }" @click="cycleColor">林间初见</h1>
+          <p class="hero-line1">像一株在晨光里悄然绽放的鸢尾</p>
+          <p class="hero-line2">这是一场安静的梦，也是一次不期而遇的心动。</p>
 
-        <router-link class="right-bottom" to="/notes">
-          <IconLink name="手帐" icon="notebook" url="javascript:void(0)" />
-        </router-link>
-
-        <div class="hint">向下滑动</div>
-      </section>
-
-      <!-- 第2屏：随想/诗句 + 时间线 -->
-      <section class="screen thoughts">
-        <div class="glass-bg"></div>
-
-        <div class="thoughts-inner">
-          <h2 class="t-title">随想</h2>
-          <div class="cards">
-            <div v-for="(t, i) in thoughts" :key="i" class="card">
-              <div class="text">{{ t.text }}</div>
-              <div class="from" v-if="t.from">{{ t.from }}</div>
-            </div>
-          </div>
-
-          <h2 class="t-title timeline-heading">时间线</h2>
-          <div class="timeline">
-            <div v-for="(item, i) in timeline" :key="i" class="tl-item">
-              <div class="tl-dot"></div>
-              <div class="tl-card">
-                <div class="tl-date">{{ item.date }}</div>
-                <div class="tl-title">{{ item.title }}</div>
-                <div class="tl-content">{{ item.content }}</div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <!-- 第3屏：精选项目 -->
-      <section class="screen projects">
-        <div class="glass-bg"></div>
-
-        <div class="thoughts-inner">
-          <h2 class="t-title">项目</h2>
-          <div class="sub">来自 GitHub：yanzhuangnanqiang</div>
-
-          <div class="cards">
-            <a
-              v-for="(p, i) in featuredProjects"
+          <div class="light-spots" ref="spotsContainer">
+            <p
+              v-for="(w, i) in whispers"
               :key="i"
-              class="card proj-card"
-              :href="p.url"
-              target="_blank"
-              rel="noreferrer"
-            >
-              <div class="proj-name">{{ p.name }}</div>
-              <div class="text">{{ p.desc }}</div>
-              <div class="proj-lang" v-if="p.lang">{{ p.lang }}</div>
-            </a>
+              class="spot"
+              :class="[dragId === i ? 'dragging' : `float-${i}`, `theme-${spotTheme[i]}`]"
+              :style="spotStyle(i)"
+              @mousedown.prevent="onDragStart($event, i)"
+              @touchstart.prevent="onDragStart($event, i)"
+            >{{ w }}</p>
+          </div>
+        </div>
+
+        <div class="scroll-hint" @click="scrollToPosts">
+          <span class="arrow">↓</span>
+        </div>
+      </section>
+
+      <!-- 社交链接 -->
+      <div class="left-bottom">
+        <IconLink
+          v-for="c in contacts"
+          :key="c.name"
+          :name="c.name"
+          :icon="c.icon"
+          :url="c.url"
+        />
+      </div>
+      <router-link class="right-bottom" to="/notes">
+        <IconLink name="手帐" icon="notebook" url="javascript:void(0)" />
+      </router-link>
+
+      <!-- 文章区 -->
+      <section class="posts-section" ref="postsRef">
+        <div class="posts-mist" :class="{ lifted: mistLifted }" ref="mistRef"></div>
+        <div class="posts-container" :class="{ revealed: mistLifted }">
+          <h2 class="section-title">— 随 想 —</h2>
+
+          <div class="filter-bar">
+            <button
+              v-for="cat in categories"
+              :key="cat"
+              :class="{ active: activeCat === cat }"
+              @click="activeCat = cat"
+            >{{ cat }}</button>
           </div>
 
-          <router-link class="more-link" to="/projects">
-            查看全部项目 →
-          </router-link>
+          <div class="post-list">
+            <article
+              v-for="(post, i) in filteredPosts"
+              :key="post.id"
+              class="post-card"
+              :style="{ animationDelay: `${0.1 + i * 0.12}s` }"
+              @click="router.push(`/post/${post.id}`)"
+            >
+              <div class="post-left">
+                <img :src="post.photoSrc" :alt="post.title" />
+              </div>
+              <div class="post-right">
+                <div class="post-meta">
+                  <span class="post-cat">{{ post.category }}</span>
+                  <span class="post-date">{{ post.date }}</span>
+                </div>
+                <h3 class="post-title">{{ post.title }}</h3>
+                <p class="post-excerpt">{{ post.excerpt }}</p>
+                <span class="post-expand">— 阅读全文</span>
+              </div>
+            </article>
+          </div>
+
+          <footer class="end-cap">林间初见 · 难忘夏光</footer>
         </div>
       </section>
     </div>
@@ -93,14 +94,128 @@
 </template>
 
 <script setup>
+import { computed, onMounted, onUnmounted, ref } from 'vue'
+import { useRouter } from 'vue-router'
 import TopBar from '@/components/app/TopBar.vue'
 import MusicDock from '@/components/Player/MusicDock.vue'
-import BackgroundWallpaper from '@/components/BackgroundWallpaper.vue'
 import IconLink from '@/components/app/IconLink.vue'
+import PetalEffect from '@/components/tuberose/PetalEffect.vue'
 import { contacts } from '@/data/contacts'
-import { thoughts } from '@/data/thoughts'
-import { timeline } from '@/data/timeline'
-import { featuredProjects } from '@/data/projects'
+import { whispers } from '@/data/thoughts'
+import { posts } from '@/data/loadPosts'
+import heroBg from '@/assets/xiaguang.jpg'
+
+const router = useRouter()
+const activeCat = ref('全部')
+const heroLoaded = ref(false)
+const postsRef = ref(null)
+const mistRef = ref(null)
+const scrollProgress = ref(0)
+const mistLifted = ref(false)
+
+function onScroll() {
+  const scroller = document.querySelector('.scroller')
+  if (!scroller) return
+  const heroH = scroller.clientHeight // 100vh
+  const y = scroller.scrollTop
+  scrollProgress.value = Math.min(y / (heroH * 0.6), 1)
+
+  // 雾散触发：滚动超过 hero 的 40%
+  if (y > heroH * 0.4 && !mistLifted.value) {
+    mistLifted.value = true
+  }
+}
+
+const categories = computed(() => {
+  const cats = new Set(posts.map(p => p.category))
+  return ['全部', ...cats]
+})
+
+const filteredPosts = computed(() => {
+  if (activeCat.value === '全部') return posts
+  return posts.filter(p => p.category === activeCat.value)
+})
+
+function scrollToPosts() {
+  postsRef.value?.scrollIntoView({ behavior: 'smooth' })
+}
+
+// 标题点击变色，深绿色系循环
+const greens = ['#2d5a27', '#3d6b35', '#1e4028', '#4a7c3f', '#2a5030']
+const colorIdx = ref(0)
+const titleColor = ref(greens[0])
+function cycleColor() {
+  colorIdx.value = (colorIdx.value + 1) % greens.length
+  titleColor.value = greens[colorIdx.value]
+}
+
+// 随机主题色
+const themes = ['mint', 'pink', 'blue', 'iris']
+const spotTheme = whispers.map(() => themes[Math.floor(Math.random() * themes.length)])
+
+// 碎碎念 — 可拖动光斑，初始散落位置
+const spots = ref([
+  { x: -140, y: -8 },
+  { x: 160,  y: 20 },
+  { x: -160, y: 56 },
+  { x: 110,  y: 94 },
+])
+const dragId = ref(-1)
+const dragStart = ref({ x: 0, y: 0, elX: 0, elY: 0 })
+const spotsContainer = ref(null)
+
+function spotStyle(i) {
+  const s = spots.value[i]
+  return {
+    left: `calc(50% + ${s.x}px)`,
+    top: s.y + 'px',
+  }
+}
+
+function onDragStart(e, i) {
+  const el = spots.value[i]
+  const clientX = e.touches ? e.touches[0].clientX : e.clientX
+  const clientY = e.touches ? e.touches[0].clientY : e.clientY
+  dragId.value = i
+  dragStart.value = { x: clientX, y: clientY, elX: el.x, elY: el.y }
+}
+
+function onMove(e) {
+  if (dragId.value < 0) return
+  e.preventDefault()
+  const clientX = e.touches ? e.touches[0].clientX : e.clientX
+  const clientY = e.touches ? e.touches[0].clientY : e.clientY
+  const dx = clientX - dragStart.value.x
+  const dy = clientY - dragStart.value.y
+  spots.value[dragId.value] = {
+    x: dragStart.value.elX + dx,
+    y: dragStart.value.elY + dy,
+  }
+}
+
+function onDragEnd() {
+  dragId.value = -1
+}
+
+onMounted(() => {
+  const scroller = document.querySelector('.scroller')
+  if (scroller) {
+    scroller.addEventListener('scroll', onScroll, { passive: true })
+  }
+  onScroll()
+  window.addEventListener('mousemove', onMove)
+  window.addEventListener('mouseup', onDragEnd)
+  window.addEventListener('touchmove', onMove, { passive: false })
+  window.addEventListener('touchend', onDragEnd)
+})
+onUnmounted(() => {
+  const scroller = document.querySelector('.scroller')
+  if (scroller) scroller.removeEventListener('scroll', onScroll)
+  window.removeEventListener('mousemove', onMove)
+  window.removeEventListener('mouseup', onDragEnd)
+  window.removeEventListener('touchmove', onMove)
+  window.removeEventListener('touchend', onDragEnd)
+})
 </script>
 
 <style scoped>
@@ -109,270 +224,547 @@ import { featuredProjects } from '@/data/projects'
   height: 100%;
   overflow: hidden;
   position: relative;
+  background: #121416;
 }
 
 .scroller {
   width: 100%;
   height: 100%;
   overflow-y: auto;
-  scroll-snap-type: y mandatory;
+  position: relative;
+  z-index: 1;
+  scrollbar-width: thin;
+  scrollbar-color: var(--mint-green) transparent;
 }
+.scroller::-webkit-scrollbar { width: 6px; }
+.scroller::-webkit-scrollbar-thumb { background: var(--mint-green); border-radius: 3px; }
 
-.screen {
+/* ---- Hero ---- */
+.hero {
   width: 100%;
   height: 100vh;
-  scroll-snap-align: start;
   position: relative;
-}
-
-.hero {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
   overflow: hidden;
 }
 
-.center {
+.hero-bg {
   position: absolute;
-  top: 46%;
-  left: 50%;
-  transform: translate(-50%, -50%);
+  inset: 0;
+  background-size: cover;
+  background-position: center 30%;
+  background-color: #2d3a24;
+  transition: opacity 0.6s ease;
+}
+
+.hero-bg::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 30% 20%, rgba(214,232,214,0.12), transparent);
+  animation: shimmer 2s ease-in-out infinite;
+}
+
+.hero-bg.loaded::after {
+  display: none;
+}
+
+@keyframes shimmer {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 0.8; }
+}
+
+.preload {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* 浮光 + 暗角 */
+.hero::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse 60% 35% at 50% 15%, rgba(255,255,240,0.22) 0%, transparent 60%),
+    radial-gradient(ellipse at center, transparent 50%, rgba(0,0,0,0.2) 100%);
+}
+
+.hero::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse 30% 20% at 25% 30%, rgba(255,250,230,0.18) 0%, transparent 50%),
+    radial-gradient(ellipse 25% 15% at 65% 45%, rgba(255,245,220,0.12) 0%, transparent 50%);
+  animation: floatLight 8s ease-in-out infinite;
+}
+
+@keyframes floatLight {
+  0%, 100% {
+    opacity: 0.5;
+    transform: translate(0, 0);
+  }
+  25% {
+    opacity: 1;
+    transform: translate(3%, -2%);
+  }
+  50% {
+    opacity: 0.4;
+    transform: translate(-2%, 3%);
+  }
+  75% {
+    opacity: 0.9;
+    transform: translate(2%, 1%);
+  }
+}
+
+.hero-content {
+  position: relative;
+  z-index: 3;
   text-align: center;
-  color: var(--cold-white);
-  text-shadow: var(--text-shadow);
-  z-index: 5;
-  width: min(720px, calc(100vw - 40px));
+  transition: opacity 0.6s ease, transform 0.6s ease;
 }
 
-.hello {
-  font-size: 3.2rem;
-  letter-spacing: 6px;
+.hero-content.fading {
+  opacity: 0.25;
+  transform: translateY(-20px);
+  pointer-events: none;
+}
+
+.hero-title {
+  font-size: 4rem;
   font-weight: 300;
+  letter-spacing: 8px;
+  color: #1e4028;
+  text-shadow:
+    -1px -1px 0 rgba(0,0,0,0.15),
+    1px -1px 0 rgba(0,0,0,0.15),
+    -1px 1px 0 rgba(0,0,0,0.15),
+    1px 1px 0 rgba(0,0,0,0.15),
+    0 0 18px rgba(255,255,255,0.85),
+    0 0 40px rgba(255,255,255,0.5),
+    0 0 70px rgba(255,255,255,0.3);
+  margin: 0;
+  cursor: pointer;
+  user-select: none;
+  transition: color 0.5s ease, text-shadow 0.5s ease;
 }
 
-.chat {
-  margin-top: 16px;
-  font-size: 1.05rem;
-  opacity: 0.82;
-  line-height: 1.7;
+.hero-line1 {
+  margin-top: 18px;
+  font-size: 1.2rem;
+  color: #c9a96e;
+  letter-spacing: 4px;
+  font-weight: 300;
+  text-shadow:
+    -1px -1px 0 rgba(0,0,0,0.12),
+    1px 1px 0 rgba(0,0,0,0.12),
+    0 0 6px rgba(201,169,110,0.5),
+    0 0 14px rgba(0,0,0,0.25);
+  animation: deepGold 3.5s ease-in-out infinite;
 }
 
-.left-bottom {
+.hero-line2 {
+  margin-top: 10px;
+  font-size: 1rem;
+  color: #b8944f;
+  letter-spacing: 2px;
+  font-weight: 300;
+  text-shadow:
+    -1px -1px 0 rgba(0,0,0,0.1),
+    1px 1px 0 rgba(0,0,0,0.1),
+    0 0 4px rgba(184,148,79,0.45),
+    0 0 10px rgba(0,0,0,0.25);
+  animation: deepGold 3.5s ease-in-out 1s infinite;
+}
+
+@keyframes deepGold {
+  0%, 100% {
+    text-shadow:
+      -1px -1px 0 rgba(0,0,0,0.12),
+      1px 1px 0 rgba(0,0,0,0.12),
+      0 0 5px rgba(201,169,110,0.4),
+      0 0 12px rgba(0,0,0,0.2);
+  }
+  35% {
+    text-shadow:
+      -1px -1px 0 rgba(0,0,0,0.12),
+      1px 1px 0 rgba(0,0,0,0.12),
+      0 0 10px rgba(218,165,80,0.7),
+      0 0 24px rgba(196,148,65,0.45),
+      0 0 45px rgba(160,120,50,0.25),
+      0 0 14px rgba(0,0,0,0.3);
+  }
+  60% {
+    text-shadow:
+      -1px -1px 0 rgba(0,0,0,0.12),
+      1px 1px 0 rgba(0,0,0,0.12),
+      0 0 6px rgba(201,169,110,0.5),
+      0 0 16px rgba(0,0,0,0.22);
+  }
+}
+
+@keyframes goldShimmer {
+  0%, 100% {
+    text-shadow:
+      0 0 8px rgba(232,213,163,0.5),
+      0 0 16px rgba(0,0,0,0.25);
+  }
+  30% {
+    text-shadow:
+      0 0 10px rgba(255,245,200,1),
+      0 0 25px rgba(255,235,170,0.9),
+      0 0 50px rgba(240,210,140,0.6),
+      0 0 80px rgba(220,190,120,0.35),
+      0 0 18px rgba(0,0,0,0.35);
+  }
+  55% {
+    text-shadow:
+      0 0 9px rgba(232,213,163,0.55),
+      0 0 22px rgba(0,0,0,0.28);
+  }
+}
+
+/* ---- 光斑散落 ---- */
+.light-spots {
+  margin-top: 52px;
+  position: relative;
+  width: 100%;
+  max-width: 660px;
+  height: 130px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.spot {
   position: absolute;
+  font-size: 0.92rem;
+  color: rgba(255, 255, 255, 0.9);
+  letter-spacing: 2px;
+  padding: 7px 15px;
+  border-radius: 15px;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  white-space: nowrap;
+  transform: translateX(-50%);
+  animation: spotIn 1s ease both;
+  cursor: grab;
+  text-shadow: 0 1px 3px rgba(0,0,0,0.3);
+}
+
+.theme-mint {
+  background: rgba(214, 232, 214, 0.25) !important;
+  border: 1px solid rgba(214, 232, 214, 0.4);
+}
+.theme-pink {
+  background: rgba(248, 215, 218, 0.22) !important;
+  border: 1px solid rgba(248, 215, 218, 0.35);
+}
+.theme-blue {
+  background: rgba(204, 229, 255, 0.22) !important;
+  border: 1px solid rgba(204, 229, 255, 0.35);
+}
+.theme-iris {
+  background: rgba(111, 66, 193, 0.15) !important;
+  border: 1px solid rgba(111, 66, 193, 0.3);
+}
+
+.spot:active {
+  cursor: grabbing;
+}
+
+.spot.dragging {
+  cursor: grabbing;
+  animation: none;
+  z-index: 10;
+  box-shadow: 0 0 40px rgba(255,255,255,0.4), 0 0 16px rgba(255,255,255,0.25);
+}
+
+@keyframes spotIn {
+  from { opacity: 0; transform: translateX(-50%) translateY(8px); }
+  to { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
+
+/* 各自浮动节奏 + 呼吸光晕 */
+.float-0 { animation: spotIn 1s ease both, driftA 5s ease-in-out 0.8s infinite, glow0 4.5s ease-in-out 0.5s infinite; }
+.float-1 { animation: spotIn 1s ease both, driftB 5.5s ease-in-out 1.1s infinite, glow1 5s ease-in-out 1s infinite; }
+.float-2 { animation: spotIn 1s ease both, driftA 6s ease-in-out 1.4s infinite, glow0 5.5s ease-in-out 1.6s infinite; }
+.float-3 { animation: spotIn 1s ease both, driftB 5.2s ease-in-out 0.9s infinite, glow1 4.8s ease-in-out 0.6s infinite; }
+
+@keyframes glow0 {
+  0%, 100% { box-shadow: 0 0 36px rgba(255,255,255,0.3), 0 0 14px rgba(255,255,255,0.2); }
+  50% { box-shadow: 0 0 8px rgba(255,255,255,0.06), 0 0 3px rgba(255,255,255,0.03); }
+}
+@keyframes glow1 {
+  0%, 100% { box-shadow: 0 0 30px rgba(255,255,255,0.25), 0 0 12px rgba(255,255,255,0.18); }
+  50% { box-shadow: 0 0 6px rgba(255,255,255,0.05), 0 0 2px rgba(255,255,255,0.02); }
+}
+
+@keyframes driftA {
+  0%, 100% { transform: translateX(-50%) translateY(0); }
+  50% { transform: translateX(-50%) translateY(-10px); }
+}
+@keyframes driftB {
+  0%, 100% { transform: translateX(-50%) translateY(0); }
+  50% { transform: translateX(-50%) translateY(-8px); }
+}
+
+/* ---- Scroll hint ---- */
+.scroll-hint {
+  position: absolute;
+  bottom: 28px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 3;
+  cursor: pointer;
+}
+.scroll-hint .arrow {
+  font-size: 1.3rem;
+  color: rgba(255,255,255,0.4);
+  animation: bounce 2s ease infinite;
+  display: block;
+}
+@keyframes bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(8px); }
+}
+
+/* ---- 角落 ---- */
+.left-bottom {
+  position: fixed;
   left: 18px;
   bottom: 18px;
-  z-index: 6;
+  z-index: 60;
   display: flex;
   gap: 14px;
 }
-
 .right-bottom {
-  position: absolute;
+  position: fixed;
   right: 18px;
   bottom: 18px;
-  z-index: 6;
+  z-index: 60;
   text-decoration: none;
 }
 
-.hint {
-  position: absolute;
-  left: 50%;
-  bottom: 18px;
-  transform: translateX(-50%);
-  z-index: 6;
-  color: rgba(220, 230, 240, 0.7);
-  font-size: 0.85rem;
-  user-select: none;
-}
-
-.thoughts {
-  background: transparent;
-  min-height: 100vh;
-  overflow: visible;
-}
-
-.glass-bg {
-  position: absolute;
-  inset: 0;
-  background: rgba(20, 20, 20, 0.35);
-  backdrop-filter: blur(16px);
-}
-
-.thoughts-inner {
+/* ---- Posts section ---- */
+.posts-section {
   position: relative;
   z-index: 2;
-  padding-top: 110px; /* 顶栏空间 */
-  padding-left: 22px;
-  padding-right: 22px;
-  max-width: 980px;
-  margin: 0 auto;
-  color: rgba(220, 230, 240, 0.92);
+  padding: 80px 0 40px;
+  background: #d6e8d6;
 }
 
-.t-title {
-  font-weight: 300;
-  letter-spacing: 4px;
-  font-size: 1.8rem;
-}
-
-.cards {
-  margin-top: 18px;
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 14px;
-}
-
-.card {
-  padding: 14px 14px;
-  border-radius: 16px;
-  background: rgba(220, 230, 240, 0.10);
-  border: 1px solid rgba(220, 230, 240, 0.15);
+/* 雾层 */
+.posts-mist {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  background: rgba(248,252,248,0.88);
   backdrop-filter: blur(10px);
-  animation: pop 500ms ease both;
+  -webkit-backdrop-filter: blur(8px);
+  transition: opacity 0.8s ease, backdrop-filter 0.8s ease;
+  pointer-events: none;
 }
 
-.text {
-  line-height: 1.7;
+.posts-mist.lifted {
+  opacity: 0;
+  backdrop-filter: blur(0px);
+  -webkit-backdrop-filter: blur(0px);
 }
 
-.from {
-  margin-top: 10px;
-  font-size: 0.82rem;
-  opacity: 0.7;
+/* 卡片入场 */
+.posts-container {
+  opacity: 0;
+  transform: translateY(30px);
+  transition: opacity 0.5s ease 0.3s, transform 0.5s ease 0.3s;
 }
 
-.timeline-heading {
-  margin-top: 36px;
+.posts-container.revealed {
+  opacity: 1;
+  transform: translateY(0);
 }
 
-.timeline {
-  margin-top: 18px;
+.post-card {
+  opacity: 0;
+  animation: cardSlideIn 0.5s ease both;
+}
+
+@keyframes cardSlideIn {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.posts-container {
+  max-width: 820px;
+  width: min(820px, calc(100vw - 48px));
+  margin: 0 auto;
+}
+
+.section-title {
+  text-align: center;
+  font-weight: 300;
+  font-size: 1.6rem;
+  letter-spacing: 6px;
+  color: var(--text-dark);
+  margin: 0 0 32px;
+}
+
+/* ---- Filter ---- */
+.filter-bar {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-bottom: 32px;
+}
+
+.filter-bar button {
+  padding: 6px 18px;
+  border-radius: 20px;
+  border: 1px solid var(--mint-green);
+  background: transparent;
+  color: var(--text-body);
+  font-size: 0.88rem;
+  cursor: pointer;
+  transition: 0.2s;
+  letter-spacing: 2px;
+}
+
+.filter-bar button.active,
+.filter-bar button:hover {
+  background: var(--mint-green);
+  color: var(--text-dark);
+}
+
+/* ---- Post cards ---- */
+.post-list {
   display: flex;
   flex-direction: column;
-  gap: 0;
-  position: relative;
-  padding-left: 20px;
-}
-
-.timeline::before {
-  content: '';
-  position: absolute;
-  left: 7px;
-  top: 8px;
-  bottom: 8px;
-  width: 1px;
-  background: rgba(220, 230, 240, 0.2);
-}
-
-.tl-item {
-  display: flex;
-  align-items: flex-start;
   gap: 16px;
-  padding: 12px 0;
+}
+
+.post-card {
+  display: flex;
+  gap: 20px;
+  padding: 16px;
+  border-radius: 16px;
+  background: rgba(255,255,255,0.7);
+  border: 1px solid rgba(0,0,0,0.05);
+  cursor: pointer;
+  transition: 0.25s ease;
   position: relative;
-  animation: pop 500ms ease both;
+  flex-wrap: wrap;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.03);
 }
 
-.tl-dot {
+.post-card:hover {
+  background: rgba(255,255,255,0.95);
+  box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+  transform: translateY(-2px);
+}
+
+.post-left {
   flex-shrink: 0;
-  width: 15px;
-  height: 15px;
-  border-radius: 999px;
-  background: var(--iris-purple);
-  border: 2px solid rgba(220, 230, 240, 0.35);
-  margin-top: 4px;
-  z-index: 1;
+  width: 160px;
+  height: 120px;
+  border-radius: 10px;
+  overflow: hidden;
 }
 
-.tl-card {
+.post-left img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.post-right {
   flex: 1;
-  padding: 12px 16px;
-  border-radius: 14px;
-  background: rgba(220, 230, 240, 0.08);
-  border: 1px solid rgba(220, 230, 240, 0.12);
-  backdrop-filter: blur(8px);
-  transition: 0.2s;
+  min-width: 260px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
 }
 
-.tl-card:hover {
-  background: rgba(220, 230, 240, 0.12);
+.post-meta {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  margin-bottom: 6px;
 }
 
-.tl-date {
-  font-size: 0.78rem;
-  opacity: 0.6;
+.post-cat {
+  font-size: 0.72rem;
+  padding: 2px 10px;
+  border-radius: 10px;
+  background: var(--mint-green);
+  color: var(--text-dark);
   letter-spacing: 1px;
 }
 
-.tl-title {
-  font-size: 1rem;
-  margin-top: 4px;
-  color: #fff;
+.post-date {
+  font-size: 0.78rem;
+  color: rgba(0,0,0,0.35);
 }
 
-.tl-content {
-  font-size: 0.88rem;
-  margin-top: 6px;
-  opacity: 0.8;
-  line-height: 1.6;
+.post-title {
+  font-size: 1.1rem;
+  font-weight: 500;
+  color: var(--text-dark);
+  margin: 0 0 6px;
+  letter-spacing: 1px;
 }
 
-.projects {
-  background: transparent;
-  min-height: 100vh;
-  overflow: visible;
-  padding-bottom: 40px;
+.post-excerpt {
+  font-size: 0.85rem;
+  color: var(--text-body);
+  line-height: 1.7;
+  margin: 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
-.sub {
+.post-expand {
   margin-top: 8px;
-  opacity: 0.65;
-  font-size: 0.9rem;
-}
-
-.proj-name {
-  font-size: 1.05rem;
-  color: #fff;
-}
-
-.proj-card {
-  text-decoration: none;
-  color: inherit;
-  display: block;
-}
-
-.proj-card:hover {
-  background: rgba(220, 230, 240, 0.14);
-  transform: translateY(-1px);
-}
-
-.proj-lang {
-  margin-top: 10px;
-  font-size: 0.8rem;
-  opacity: 0.65;
-}
-
-.more-link {
-  display: inline-block;
-  margin-top: 20px;
-  padding: 8px 20px;
-  border-radius: 14px;
-  background: rgba(220, 230, 240, 0.08);
-  border: 1px solid rgba(220, 230, 240, 0.15);
-  color: rgba(220, 230, 240, 0.9);
-  text-decoration: none;
-  font-size: 0.9rem;
+  font-size: 0.75rem;
+  color: rgba(0,0,0,0.3);
+  letter-spacing: 2px;
   transition: 0.2s;
 }
 
-.more-link:hover {
-  background: rgba(220, 230, 240, 0.14);
+.post-card:hover .post-expand {
+  color: var(--text-dark);
 }
 
-@keyframes pop {
-  from { transform: translateY(6px); opacity: 0; }
+/* ---- End ---- */
+.end-cap {
+  text-align: center;
+  padding: 48px 0 20px;
+  color: rgba(0,0,0,0.2);
+  font-size: 0.82rem;
+  letter-spacing: 4px;
+}
+
+@keyframes fadeUp {
+  from { transform: translateY(10px); opacity: 0; }
   to { transform: translateY(0); opacity: 1; }
 }
 
 @media (max-width: 860px) {
-  .hello { font-size: 2.4rem; }
-  .cards { grid-template-columns: 1fr; }
+  .hero-title { font-size: 2.8rem; }
+  .post-card { flex-direction: column; }
+  .post-left { width: 100%; height: 180px; }
+  .left-bottom { gap: 8px; }
 }
 </style>

@@ -11,14 +11,16 @@ html, body, #app {
 }
 
 :root {
-  /* 黛尾花色板 */
-  --iris-purple: #7d8a9e;       /* 鸢尾紫 - 主色 */
-  --night-indigo: #4a5360;      /* 夜靛 - 强调 */
-  --cold-white: #dce6f0;        /* 冷白带蓝 - 高亮文字 */
-  --pale-cyan: #edf0f3;         /* 极淡黛青 - 底色 */
-  --deep-night: #1e2a32;        /* 深靛 - 重点文字 */
-  --glass-bg: rgba(220, 230, 240, 0.12);
-  --glass-border: rgba(220, 230, 240, 0.2);
+  /* 鸢尾与晨光 · 色板 */
+  --mint-green: #d6e8d6;        /* 浅薄荷绿 - 主色 */
+  --cream-white: #f8f9fa;       /* 奶白 - 底色 */
+  --light-pink: #f8d7da;        /* 淡粉 - 点缀 */
+  --light-blue: #cce5ff;        /* 淡蓝 - 点缀 */
+  --iris-purple: #6f42c1;       /* 鸢尾紫 - 强调/少量 */
+  --text-dark: #2d5a27;         /* 深绿 - 标题 */
+  --text-body: #666;            /* 浅灰 - 正文 */
+  --glass-bg: rgba(255, 255, 255, 0.55);
+  --glass-border: rgba(0, 0, 0, 0.06);
   --glass-blur: blur(12px);
-  --text-shadow: 0 0 15px rgba(0, 0, 0, 0.5);
+  --text-shadow: 0 0 10px rgba(0, 0, 0, 0.15);
 }
