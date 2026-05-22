@@ -1,7 +1,7 @@
 ---
 date: 2026-05-08
 category: 手帐
-photo: "jinye"
+photo: "3"
 ---
 
 把想说的话写下来，哪怕没有人立刻读到。

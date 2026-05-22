@@ -4,6 +4,7 @@ import p3 from '@/assets/saiset/3.png'
 import p4 from '@/assets/saiset/4.png'
 import p5 from '@/assets/saiset/5.png'
 import p6 from '@/assets/saiset/6.png'
+import p7 from '@/assets/saiset/7.png'
 import p8 from '@/assets/saiset/8.png'
 import p9 from '@/assets/saiset/9.png'
 import p10 from '@/assets/saiset/10.png'
@@ -18,7 +19,7 @@ import jinye from '@/assets/saiset/jinye.png'
 // 照片注册表 — 加了新照片在这里加一行
 const photoMap = {
   '1': p1, '2': p2, '3': p3, '4': p4, '5': p5,
-  '6': p6, '8': p8, '9': p9, '10': p10, '11': p11,
+  '6': p6, '7': p7, '8': p8, '9': p9, '10': p10, '11': p11,
   '12': p12, '13': p13, '14': p14, '15': p15, '16': p16,
   jinye,
 }
