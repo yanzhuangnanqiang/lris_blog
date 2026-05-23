@@ -16,18 +16,26 @@
         </div>
       </section>
 
-      <div class="search-zone">
+      <div class="search-zone" :class="{ active: searchActive }">
         <div class="tool-search">
-          <input v-model="repoSearch" type="text" placeholder="搜索项目、技术栈或描述..." />
-          <span v-if="repoSearch" class="search-clear" @click="repoSearch = ''">✕</span>
-          <span v-else class="search-icon">🔍</span>
+          <input
+            v-model="repoSearch"
+            type="text"
+            placeholder="搜索项目、技术栈或描述..."
+            @keyup.enter="searchActive = true"
+            @focus="searchActive = true"
+          />
+          <span v-if="repoSearch" class="search-clear" @click="repoSearch = ''; searchActive = false">✕</span>
+          <span v-else class="search-icon" @click="searchActive = true">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          </span>
         </div>
-        <div class="filter-row">
+        <div class="filter-row" v-if="searchActive">
           <button v-for="lang in allLanguages" :key="lang" class="ftag" :class="{ active: filterLangs.includes(lang) }" @click="toggleLang(lang)">{{ lang }}</button>
         </div>
       </div>
 
-      <section class="calendar-section" :style="{ opacity: 0.35 + Math.min(0.65, Math.max(0, (scrollPct - 0.05) * 3)) }">
+      <section v-if="!searchActive" class="calendar-section" :style="{ opacity: 0.35 + Math.min(0.65, Math.max(0, (scrollPct - 0.05) * 3)) }">
         <div class="cal-header">
           <span class="cal-label">活动日历</span>
           <span class="cal-count">{{ calendarStats.streak }} 天</span>
@@ -39,7 +47,7 @@
         </div>
       </section>
 
-      <div class="container" :style="{ opacity: Math.min(1, Math.max(0, (scrollPct - 0.1) * 3)) }">
+      <div class="container" :style="{ opacity: searchActive ? 1 : Math.min(1, Math.max(0, (scrollPct - 0.1) * 3)) }">
         <div v-if="loading" class="loading-state">加载中…</div>
         <div v-else-if="error" class="error-state">
           <p>拉取失败：{{ error }}</p>
@@ -84,6 +92,7 @@ const scrollerRef = ref(null)
 const scrollPct = ref(0)
 const repoSearch = ref('')
 const filterLangs = ref([])
+const searchActive = ref(false)
 
 function toggleLang(lang) {
   const idx = filterLangs.value.indexOf(lang)
@@ -185,12 +194,14 @@ onMounted(async () => {
 .hint-line { display: block; width: 60px; height: 1px; background: rgba(123,104,238,0.3); animation: breathe 3s ease-in-out infinite; }
 @keyframes breathe { 0%,100% { opacity: 0.3; } 50% { opacity: 0.7; } }
 
-.search-zone { max-width: 520px; margin: 0 auto; padding: 0 24px; position: relative; z-index: 3; }
+.search-zone { max-width: 520px; margin: 0 auto; padding: 24px 24px 0; position: relative; z-index: 3; transition: all 0.4s ease; }
+.search-zone.active { max-width: 720px; padding-top: 40px; }
 .tool-search { position: relative; }
 .tool-search input { width: 100%; padding: 10px 38px 10px 14px; box-sizing: border-box; border: 1px solid rgba(255,255,255,0.25); border-radius: 14px; background: rgba(255,255,255,0.22); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); font-size: 0.85rem; color: #1a1a1a; letter-spacing: 1px; outline: none; transition: border-color 0.35s, box-shadow 0.35s; }
 .tool-search input::placeholder { color: rgba(123,104,238,0.35); letter-spacing: 2px; }
 .tool-search input:focus { border-color: rgba(123,104,238,0.4); box-shadow: 0 0 0 4px rgba(123,104,238,0.08); }
-.tool-search .search-icon { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); font-size: 0.85rem; opacity: 0.35; pointer-events: none; }
+.tool-search .search-icon { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); opacity: 0.35; cursor: pointer; transition: 0.2s; color: #555; display: flex; align-items: center; }
+.tool-search .search-icon:hover { opacity: 0.7; color: #7B68EE; }
 .search-clear { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); font-size: 0.9rem; color: #555; cursor: pointer; transition: 0.2s; }
 .search-clear:hover { color: #1a1a1a; }
 

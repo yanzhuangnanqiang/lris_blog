@@ -84,8 +84,11 @@
               </div>
             </div>
             <div class="search-box">
-              <input v-model="searchQuery" @input="onSearchInput" type="text" placeholder="搜索标签或内容..." />
-              <span class="search-icon">🔍</span>
+              <input v-model="searchQuery" @input="onSearchInput" @keyup.enter="searchActive = true" @focus="searchActive = true" type="text" placeholder="搜索标签或内容..." />
+              <span v-if="searchQuery" class="search-clear" @click="searchQuery = ''; searchActive = false">✕</span>
+              <span v-else class="search-icon" @click="searchActive = true">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              </span>
             </div>
           </div>
 
@@ -163,6 +166,7 @@ const calOpen = ref(false)
 const calYear = ref(2026)
 const calMonth = ref(4)
 const searchQuery = ref('')
+const searchActive = ref(false)
 const selectedMonth = ref('')
 const visibleCount = ref(6)
 
@@ -398,7 +402,10 @@ function bg(i) {
 .search-box input::placeholder { color: var(--text-muted); letter-spacing: 2px; transition: opacity 0.5s ease; }
 .search-box input:focus { border-color: rgba(180,210,180,0.6); box-shadow: 0 0 0 4px rgba(214,232,214,0.2); }
 .search-box input:focus::placeholder { opacity: 0.5; }
-.search-icon { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); font-size: 0.85rem; opacity: 0.4; pointer-events: none; }
+.search-icon { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); opacity: 0.35; cursor: pointer; transition: 0.2s; color: #555; display: flex; align-items: center; }
+.search-icon:hover { opacity: 0.7; color: var(--mint-green); }
+.search-clear { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); font-size: 0.9rem; color: #555; cursor: pointer; transition: 0.2s; }
+.search-clear:hover { color: #1a1a1a; }
 
 /* ---- 时间轴 ---- */
 .journal { position: relative; padding-left: 32px; margin-bottom: 24px; }
