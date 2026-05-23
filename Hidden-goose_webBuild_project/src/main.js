@@ -16,3 +16,10 @@ const app = createApp(App)
 app.use(createPinia())
 app.use(router)
 app.mount('#app')
+
+// 移除加载页
+const loader = document.getElementById('loader')
+if (loader) {
+  loader.classList.add('hide')
+  setTimeout(() => loader.remove(), 500)
+}

@@ -224,7 +224,7 @@ onUnmounted(() => {
   height: 100%;
   overflow: hidden;
   position: relative;
-  background: #121416;
+  background: linear-gradient(180deg, var(--page-top) 0%, var(--page-bottom) 100%);
 }
 
 .scroller {
@@ -453,6 +453,7 @@ onUnmounted(() => {
   letter-spacing: 2px;
   padding: 7px 15px;
   border-radius: 15px;
+  background: rgba(0,0,0,0.15);
   backdrop-filter: blur(6px);
   -webkit-backdrop-filter: blur(6px);
   white-space: nowrap;
@@ -561,7 +562,7 @@ onUnmounted(() => {
   position: relative;
   z-index: 2;
   padding: 80px 0 40px;
-  background: #d6e8d6;
+  background: linear-gradient(180deg, rgba(184,212,184,0.45) 0%, var(--page-bottom) 100%);
 }
 
 /* 雾层 */
@@ -569,7 +570,7 @@ onUnmounted(() => {
   position: absolute;
   inset: 0;
   z-index: 5;
-  background: rgba(248,252,248,0.88);
+  background: rgba(250,252,251,0.92);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(8px);
   transition: opacity 0.8s ease, backdrop-filter 0.8s ease;
@@ -631,11 +632,11 @@ onUnmounted(() => {
   padding: 6px 18px;
   border-radius: 20px;
   border: 1px solid var(--mint-green);
-  background: transparent;
+  background: var(--card-bg);
   color: var(--text-body);
   font-size: 0.88rem;
   cursor: pointer;
-  transition: 0.2s;
+  transition: 0.3s ease;
   letter-spacing: 2px;
 }
 
@@ -657,19 +658,19 @@ onUnmounted(() => {
   gap: 20px;
   padding: 16px;
   border-radius: 16px;
-  background: rgba(255,255,255,0.7);
-  border: 1px solid rgba(0,0,0,0.05);
+  background: var(--card-bg);
+  border: 1px solid rgba(0,0,0,0.04);
   cursor: pointer;
-  transition: 0.25s ease;
+  transition: 0.3s ease;
   position: relative;
   flex-wrap: wrap;
-  box-shadow: 0 2px 12px rgba(0,0,0,0.03);
+  box-shadow: var(--shadow-card);
 }
 
 .post-card:hover {
-  background: rgba(255,255,255,0.95);
-  box-shadow: 0 4px 20px rgba(0,0,0,0.06);
-  transform: translateY(-2px);
+  background: rgba(250,252,251,0.98);
+  box-shadow: var(--shadow-card-hover);
+  transform: scale(1.008);
 }
 
 .post-left {
@@ -705,14 +706,14 @@ onUnmounted(() => {
   font-size: 0.72rem;
   padding: 2px 10px;
   border-radius: 10px;
-  background: var(--mint-green);
+  background: var(--mint-soft);
   color: var(--text-dark);
   letter-spacing: 1px;
 }
 
 .post-date {
   font-size: 0.78rem;
-  color: rgba(0,0,0,0.35);
+  color: var(--text-muted);
 }
 
 .post-title {

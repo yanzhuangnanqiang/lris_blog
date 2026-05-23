@@ -219,6 +219,7 @@ function toggle() {
     playing.value = false
     if (rafId) { cancelAnimationFrame(rafId); rafId = null }
   } else {
+    if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume()
     if (!analyser) initAnalyser()
     audio.play().catch(() => {})
     playing.value = true

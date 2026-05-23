@@ -7,7 +7,44 @@
     <title>林间初见，难忘夏光</title>
   </head>
   <body>
-    <div id="app"></div>
+    <div id="app">
+      <div id="loader">
+        <style>
+          #loader {
+            position: fixed; inset: 0;
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            background: #f5f7f3;
+            z-index: 9999;
+            transition: opacity 0.4s ease;
+          }
+          #loader.hide { opacity: 0; pointer-events: none; }
+          #loader .dot {
+            width: 10px; height: 10px;
+            margin: 0 4px;
+            border-radius: 50%;
+            background: #6f42c1;
+            display: inline-block;
+            animation: ld 1.2s ease-in-out infinite both;
+          }
+          #loader .dot:nth-child(2) { animation-delay: 0.2s; }
+          #loader .dot:nth-child(3) { animation-delay: 0.4s; }
+          @keyframes ld {
+            0%, 100% { transform: scale(0.6); opacity: 0.3; }
+            50% { transform: scale(1.2); opacity: 1; }
+          }
+          #loader p {
+            margin-top: 14px;
+            font-size: 0.85rem; color: rgba(0,0,0,0.3);
+            letter-spacing: 4px;
+          }
+        </style>
+        <div>
+          <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+        </div>
+        <p>林间初见</p>
+      </div>
+    </div>
     <script type="module" src="/src/main.js"></script>
   </body>
 </html>

@@ -15,6 +15,7 @@ const routes = [
   { path: '/projects', name: 'Projects', component: () => import('@/views/Projects.vue') },
   { path: '/notes', name: 'Notes', component: () => import('@/views/TuberoseNotes.vue') },
   { path: '/about', name: 'About', component: () => import('@/views/About.vue') },
+  { path: '/gallery', name: 'Gallery', component: () => import('@/views/PhotoGallery.vue') },
   { path: '/post/:id', name: 'Post', component: () => import('@/views/PostDetail.vue') },
 ]
 

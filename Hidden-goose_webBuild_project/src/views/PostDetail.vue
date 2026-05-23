@@ -53,7 +53,7 @@ const post = computed(() => posts.find(p => p.id === route.params.id))
   height: 100%;
   overflow: hidden;
   position: relative;
-  background: #f5f7f3;
+  background: linear-gradient(180deg, var(--page-top) 0%, var(--page-bottom) 100%);
 }
 
 .detail-scroller {
@@ -198,7 +198,7 @@ const post = computed(() => posts.find(p => p.id === route.params.id))
 }
 
 .post-body :deep(pre) {
-  background: #f0f4ef;
+  background: var(--card-bg);
   padding: 14px 18px;
   border-radius: 12px;
   overflow-x: auto;
