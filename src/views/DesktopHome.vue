@@ -94,7 +94,7 @@
 </template>
 
 <script setup>
-import { computed, onMounted, onUnmounted, ref } from 'vue'
+import { computed, nextTick, onMounted, onUnmounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import TopBar from '@/components/app/TopBar.vue'
 import MusicDock from '@/components/Player/MusicDock.vue'
