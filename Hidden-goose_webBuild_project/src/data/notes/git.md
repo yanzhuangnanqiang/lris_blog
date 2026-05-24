@@ -1,13 +1,13 @@
 ---
 title: Git / GitHub 协作终极小抄（一次到位版）
-date: 2025-04-01
-tags: [ git,知识清单 ]
+date: 2025-04-02
+tags: [git,学习]
 summary: 可以帮你巩固知识的git 学习清单
 ---
 
 
 ## 内容总结
-
+---
 > 默认约定：主分支叫 `main`，远端叫 `origin`。如果你仓库是 `master`，把命令里的 `main` 替换成 `master` 即可。  
 > 总原则：**先 `git status`，再操作；不确定时先 `git fetch`。**
 
