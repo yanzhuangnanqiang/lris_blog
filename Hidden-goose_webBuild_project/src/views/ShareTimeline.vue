@@ -145,7 +145,7 @@
 </template>
 
 <script setup>
-import { computed, nextTick, onMounted, onUnmounted, ref } from 'vue'
+import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import TopBar from '@/components/app/TopBar.vue'
 import MusicDock from '@/components/Player/MusicDock.vue'
@@ -153,8 +153,14 @@ import { gallery, plans, lifeJournal } from '@/data/shares'
 import yaolanBg from '@/assets/yaolan.jpg'
 
 const router = useRouter()
-const dailyDone = ref(plans.daily.map(() => false))
-const weeklyDone = ref(plans.weekly.map(() => false))
+function loadChecks(key, len) {
+  try { const arr = JSON.parse(localStorage.getItem(key)); if (Array.isArray(arr) && arr.length === len) return arr } catch {}
+  return Array(len).fill(false)
+}
+const dailyDone = ref(loadChecks('plan-daily', plans.daily.length))
+const weeklyDone = ref(loadChecks('plan-weekly', plans.weekly.length))
+watch(dailyDone, v => localStorage.setItem('plan-daily', JSON.stringify(v)), { deep: true })
+watch(weeklyDone, v => localStorage.setItem('plan-weekly', JSON.stringify(v)), { deep: true })
 const dailyProgress = computed(() => dailyDone.value.filter(Boolean).length)
 const weeklyProgress = computed(() => weeklyDone.value.filter(Boolean).length)
 const stackRevealed = ref(false)
@@ -170,27 +176,12 @@ const searchActive = ref(false)
 const selectedMonth = ref('')
 const visibleCount = ref(6)
 
-// ---- localStorage 缓存 ----
-const CACHE_KEY = 'life-journal-cache'
-
-function loadCachedJournal() {
-  try {
-    const raw = localStorage.getItem(CACHE_KEY)
-    if (raw) {
-      const arr = JSON.parse(raw)
-      if (Array.isArray(arr) && arr.length) return arr
-    }
-  } catch {}
-  localStorage.setItem(CACHE_KEY, JSON.stringify(lifeJournal))
-  return [...lifeJournal]
-}
-
-const cachedJournal = ref(loadCachedJournal())
+const journal = ref([...lifeJournal])
 
 const filteredJournal = computed(() => {
   const q = searchQuery.value.trim().toLowerCase()
   const m = selectedMonth.value
-  let result = cachedJournal.value
+  let result = journal.value
   if (m) result = result.filter(d => d.date.startsWith(m))
   if (q) {
     result = result.filter(day =>
@@ -221,7 +212,7 @@ const calDays = computed(() => {
 
 const entrySet = computed(() => {
   const set = new Set()
-  cachedJournal.value.forEach(d => set.add(d.date))
+  journal.value.forEach(d => set.add(d.date))
   return set
 })
 

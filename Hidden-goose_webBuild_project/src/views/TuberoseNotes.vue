@@ -22,11 +22,12 @@
         <PetalEffect v-if="theme.isPetalEnabled && !selectedNote" />
         <article v-if="selectedNote" class="reader-panel">
           <button class="rp-back" @click="selectedId = null">← 返回</button>
+          <div v-if="coverImg" class="rp-cover" :style="{ backgroundImage: `url(${coverImg})` }"></div>
           <div class="rp-header">
             <h1>{{ selectedNote.title }}</h1>
             <div class="rp-meta">
               <span>{{ selectedNote.date }}</span>
-              <span v-for="t in selectedNote.tags" :key="t" class="rp-tag">{{ t }}</span>
+              <span v-for="t in selectedNote.tags" :key="t" class="rp-tag"># {{ t }}</span>
             </div>
           </div>
           <div class="rp-body" v-html="selectedNote.bodyHtml"></div>
@@ -37,11 +38,12 @@
       <template v-else-if="theme.currentNav === 'archive'">
         <article v-if="selectedNote" class="reader-panel">
           <button class="rp-back" @click="selectedId = null">← 返回列表</button>
+          <div v-if="coverImg" class="rp-cover" :style="{ backgroundImage: `url(${coverImg})` }"></div>
           <div class="rp-header">
             <h1>{{ selectedNote.title }}</h1>
             <div class="rp-meta">
               <span>{{ selectedNote.date }}</span>
-              <span v-for="t in selectedNote.tags" :key="t" class="rp-tag">{{ t }}</span>
+              <span v-for="t in selectedNote.tags" :key="t" class="rp-tag"># {{ t }}</span>
             </div>
           </div>
           <div class="rp-body" v-html="selectedNote.bodyHtml"></div>
@@ -63,7 +65,7 @@
               class="av-tag"
               :class="{ active: activeTags.includes(t) }"
               @click="toggleTag(t)"
-            >{{ t }}</span>
+            ># {{ t }}</span>
           </div>
           <p class="av-count">{{ filteredArchive.length }} 篇笔记</p>
 
@@ -80,7 +82,7 @@
                 <span class="avc-date">{{ note.date }}</span>
               </div>
               <div class="avc-tags">
-                <span v-for="t in note.tags" :key="t">{{ t }}</span>
+                <span v-for="t in note.tags" :key="t"># {{ t }}</span>
               </div>
             </div>
           </div>
@@ -120,6 +122,11 @@ function noteImg(idx) { return projectImgs[idx % projectImgs.length] }
 const theme = useAppStore()
 const selectedId = ref(null)
 const selectedNote = computed(() => notes.find(n => n.id === selectedId.value) || null)
+const coverImg = computed(() => {
+  if (!selectedNote.value) return null
+  const idx = notes.findIndex(n => n.id === selectedNote.value.id)
+  return noteImg(idx)
+})
 const mainRef = ref(null)
 const showTopBtn = ref(false)
 function onScroll() { showTopBtn.value = (mainRef.value?.scrollTop || 0) > 300 }
@@ -178,7 +185,11 @@ const filteredArchive = computed(() => {
   border: 1px solid rgba(255,255,255,0.1);
   border-radius: 18px;
   color: rgba(230,235,240,0.92);
+  scrollbar-width: thin;
+  scrollbar-color: rgba(111,66,193,0.25) transparent;
 }
+.reader-panel::-webkit-scrollbar { height: 4px; }
+.reader-panel::-webkit-scrollbar-thumb { background: rgba(111,66,193,0.25); border-radius: 2px; }
 
 .rp-back {
   display: inline-block;
@@ -194,33 +205,42 @@ const filteredArchive = computed(() => {
 }
 .rp-back:hover { color: rgba(255,255,255,0.8); }
 
-.rp-header { margin-bottom: 28px; padding-bottom: 18px; border-bottom: 1px solid rgba(255,255,255,0.08); }
-.rp-header h1 { font-size: 1.6rem; font-weight: 400; color: #fff; letter-spacing: 3px; margin: 0 0 12px; }
-.rp-meta { display: flex; align-items: center; gap: 10px; font-size: 0.78rem; color: rgba(255,255,255,0.4); letter-spacing: 1px; flex-wrap: wrap; }
-.rp-tag { padding: 2px 10px; border-radius: 10px; background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.5); font-size: 0.7rem; }
+.rp-cover {
+  width: 100%;
+  height: 240px;
+  border-radius: 14px;
+  background-size: cover;
+  background-position: center;
+  margin-bottom: 32px;
+}
 
-.rp-body { line-height: 2; font-size: 0.93rem; }
-.rp-body :deep(h2) { font-size: 1.2rem; color: #fff; font-weight: 400; margin: 28px 0 10px; letter-spacing: 2px; }
-.rp-body :deep(h3) { font-size: 1rem; color: rgba(255,255,255,0.9); font-weight: 400; margin: 22px 0 8px; }
-.rp-body :deep(p) { margin: 0 0 14px; }
-.rp-body :deep(code) { background: rgba(255,255,255,0.1); padding: 2px 7px; border-radius: 4px; font-size: 0.85rem; }
-.rp-body :deep(pre) { background: rgba(0,0,0,0.3); padding: 14px 18px; border-radius: 12px; overflow-x: auto; margin: 14px 0; }
-.rp-body :deep(pre code) { background: none; padding: 0; }
-.rp-body :deep(blockquote) { margin: 14px 0; padding: 10px 16px; border-left: 3px solid rgba(255,255,255,0.15); color: rgba(255,255,255,0.55); font-style: italic; }
-.rp-body :deep(a) { color: #b8a0e0; }
-.rp-body :deep(pre) { scrollbar-width: thin; scrollbar-color: rgba(111,66,193,0.3) transparent; }
+.rp-header { margin-bottom: 32px; padding-bottom: 20px; border-bottom: 1px solid rgba(255,255,255,0.08); }
+.rp-header h1 { font-size: 1.8rem; font-weight: 300; color: #fff; letter-spacing: 4px; margin: 0 0 14px; line-height: 1.3; }
+.rp-meta { display: flex; align-items: center; gap: 10px; font-size: 0.8rem; color: rgba(255,255,255,0.35); letter-spacing: 1px; flex-wrap: wrap; }
+.rp-tag { padding: 3px 12px; border-radius: 10px; background: rgba(217,130,180,0.2); color: #e8a0c8; font-size: 0.72rem; }
+
+.rp-body { line-height: 2; font-size: 0.95rem; color: rgba(225,230,235,0.85); }
+.rp-body :deep(h2) { font-size: 1.35rem; color: #fff; font-weight: 300; margin: 36px 0 14px; letter-spacing: 3px; padding-bottom: 8px; border-bottom: 1px solid rgba(255,255,255,0.06); }
+.rp-body :deep(h3) { font-size: 1.1rem; color: rgba(255,255,255,0.9); font-weight: 400; margin: 28px 0 10px; letter-spacing: 2px; }
+.rp-body :deep(h4) { font-size: 1rem; color: rgba(255,255,255,0.75); font-weight: 500; margin: 22px 0 8px; }
+.rp-body :deep(p) { margin: 0 0 18px; }
+.rp-body :deep(ul), .rp-body :deep(ol) { margin: 8px 0 18px; padding-left: 24px; }
+.rp-body :deep(li) { margin-bottom: 6px; }
+.rp-body :deep(strong) { color: #fff; font-weight: 600; }
+.rp-body :deep(code) { background: rgba(255,255,255,0.08); padding: 2px 8px; border-radius: 5px; font-size: 0.88rem; color: #e0a8c8; font-family: 'Cascadia Code','Fira Code','JetBrains Mono',Consolas,monospace; }
+.rp-body :deep(pre) { background: #1e1e1e; padding: 20px 24px; border-radius: 12px; overflow-x: auto; margin: 20px 0; border: 1px solid rgba(255,255,255,0.06); font-family: 'Cascadia Code','Fira Code','JetBrains Mono',Consolas,monospace; scrollbar-width: thin; scrollbar-color: rgba(111,66,193,0.3) transparent; }
 .rp-body :deep(pre)::-webkit-scrollbar { height: 4px; }
 .rp-body :deep(pre)::-webkit-scrollbar-thumb { background: rgba(111,66,193,0.3); border-radius: 2px; }
-
-/* 归档卡片区横滚动条 */
-.archive-view { scrollbar-width: thin; scrollbar-color: rgba(111,66,193,0.25) transparent; }
-.archive-view::-webkit-scrollbar { height: 4px; }
-.archive-view::-webkit-scrollbar-thumb { background: rgba(111,66,193,0.25); border-radius: 2px; }
-
-/* 阅读面板横滚动条 */
-.reader-panel { scrollbar-width: thin; scrollbar-color: rgba(111,66,193,0.25) transparent; }
-.reader-panel::-webkit-scrollbar { height: 4px; }
-.reader-panel::-webkit-scrollbar-thumb { background: rgba(111,66,193,0.25); border-radius: 2px; }
+.rp-body :deep(pre code) { background: none; padding: 0; color: #d4d4d4; font-size: 0.84rem; line-height: 1.7; }
+.rp-body :deep(blockquote) { margin: 18px 0; padding: 14px 20px; border-left: 3px solid rgba(111,66,193,0.35); background: rgba(255,255,255,0.03); border-radius: 0 10px 10px 0; color: rgba(255,255,255,0.55); font-style: italic; }
+.rp-body :deep(blockquote p) { margin: 4px 0; }
+.rp-body :deep(a) { color: #c0a8f0; text-decoration: none; border-bottom: 1px solid rgba(192,168,240,0.3); }
+.rp-body :deep(a:hover) { border-bottom-color: #c0a8f0; }
+.rp-body :deep(hr) { border: none; border-top: 1px solid rgba(255,255,255,0.06); margin: 32px 0; }
+.rp-body :deep(img) { max-width: 100%; border-radius: 12px; margin: 16px 0; }
+.rp-body :deep(table) { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 0.88rem; }
+.rp-body :deep(th), .rp-body :deep(td) { padding: 8px 14px; border: 1px solid rgba(255,255,255,0.08); text-align: left; }
+.rp-body :deep(th) { background: rgba(255,255,255,0.05); color: #fff; font-weight: 500; }
 
 /* ===== 归档视图 ===== */
 .archive-view {
@@ -249,26 +269,26 @@ const filteredArchive = computed(() => {
 .av-search input:focus { border-color: rgba(111,66,193,0.4); }
 .av-search-icon { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); opacity: 0.3; color: rgba(255,255,255,0.6); display: flex; }
 
-.av-tags { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 20px; padding: 14px 18px; background: rgba(15,20,30,0.55); border-radius: 14px; border: 1px solid rgba(255,255,255,0.06); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
+.av-tags { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 20px; padding: 14px 18px; background: rgba(15,20,30,0.28); border-radius: 14px; border: 1px solid rgba(255,255,255,0.06); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
 .av-tag {
   padding: 5px 14px;
   border-radius: 14px;
-  background: rgba(255,255,255,0.08);
+  background: rgba(15,20,30,0.45);
   border: 1px solid rgba(255,255,255,0.1);
-  color: #fff;
+  color: #e8a0c8;
   font-size: 0.78rem;
   letter-spacing: 1px;
   cursor: pointer;
   transition: 0.2s;
 }
-.av-tag:hover { background: rgba(255,255,255,0.15); }
+.av-tag:hover { background: rgba(15,20,30,0.65); color: #f0b8d8; }
 .av-tag.active {
-  background: rgba(111,66,193,0.25);
-  border-color: rgba(111,66,193,0.4);
-  color: #fff;
+  background: rgba(217,130,180,0.25);
+  border-color: rgba(217,130,180,0.4);
+  color: #f0b8d8;
 }
 
-.av-count { font-size: 0.78rem; color: rgba(255,255,255,0.3); letter-spacing: 2px; margin-bottom: 24px; }
+.av-count { font-size: 0.78rem; color: rgba(255,255,255,0.35); letter-spacing: 2px; margin-bottom: 24px; text-align: right; }
 
 .av-grid {
   display: grid;
@@ -280,6 +300,7 @@ const filteredArchive = computed(() => {
   position: relative;
   background-size: cover;
   background-position: center;
+  background-color: rgba(30,42,50,0.6);
   border: 1px solid rgba(255,255,255,0.08);
   border-radius: 16px;
   overflow: hidden;
@@ -298,40 +319,43 @@ const filteredArchive = computed(() => {
 .avc-main {
   position: relative;
   z-index: 1;
-  padding: 20px 20px 8px;
-  background: linear-gradient(to top, rgba(20,28,36,0.9) 0%, rgba(20,28,36,0.4) 70%, transparent 100%);
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  padding: 24px 20px 10px;
+  background: linear-gradient(to top, rgba(15,22,30,0.92) 0%, rgba(15,22,30,0.5) 60%, transparent 100%);
 }
-.avc-main h4 { margin: 0; }
-.avc-date { margin-top: 4px; display: block; }
+.avc-main h4 {
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: #fff;
+  letter-spacing: 1px;
+  margin: 0;
+  text-shadow: 0 1px 4px rgba(0,0,0,0.5);
+}
+.avc-date { font-size: 0.7rem; color: rgba(255,255,255,0.45); letter-spacing: 1px; white-space: nowrap; }
 .avc-tags {
   position: relative;
   z-index: 1;
-  padding: 0 20px 16px;
-  background: rgba(20,28,36,0.9);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 0 20px 18px;
+  background: rgba(15,22,30,0.92);
 }
-.avc-main { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
-.avc-main h4 {
-  font-size: 0.95rem;
-  font-weight: 400;
-  color: rgba(255,255,255,0.85);
-  letter-spacing: 1px;
-  margin: 0;
-}
-.avc-date { font-size: 0.72rem; color: rgba(255,255,255,0.3); letter-spacing: 1px; }
-.avc-tags { display: flex; flex-wrap: wrap; gap: 6px; }
 .avc-tags span {
-  font-size: 0.65rem;
-  padding: 2px 8px;
+  font-size: 0.68rem;
+  padding: 3px 10px;
   border-radius: 8px;
-  background: rgba(255,255,255,0.05);
-  color: rgba(255,255,255,0.35);
+  background: rgba(0,0,0,0.35);
+  color: #e0a8c8;
 }
 .av-empty {
   text-align: center;
-  padding: 60px 0;
-  color: rgba(255,255,255,0.2);
+  padding: 80px 0;
+  color: rgba(255,255,255,0.25);
   letter-spacing: 2px;
-  font-size: 0.9rem;
+  font-size: 0.95rem;
 }
 
 /* ===== 实验室占位 ===== */
@@ -415,5 +439,14 @@ const filteredArchive = computed(() => {
 @keyframes fabHint {
   0%, 100% { opacity: 0.3; }
   50% { opacity: 0.65; }
+}
+
+@media (max-width: 780px) {
+  .reader-panel { padding: 28px 20px; width: calc(100% - 24px); }
+  .rp-cover { height: 180px; }
+  .rp-header h1 { font-size: 1.4rem; }
+  .archive-view { width: calc(100% - 24px); }
+  .av-grid { grid-template-columns: 1fr; gap: 12px; }
+  .av-search-box { max-width: 100%; }
 }
 </style>

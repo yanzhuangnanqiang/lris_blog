@@ -59,7 +59,7 @@
               v-for="cat in categories"
               :key="cat"
               :class="{ active: activeCat === cat }"
-              @click="activeCat = cat"
+              @click="switchCat(cat)"
             >{{ cat }}</button>
           </div>
 
@@ -107,6 +107,12 @@ import heroBg from '@/assets/xiaguang.jpg'
 
 const router = useRouter()
 const activeCat = ref('全部')
+function switchCat(cat) {
+  const el = document.querySelector('.scroller')
+  const top = el ? el.scrollTop : 0
+  activeCat.value = cat
+  nextTick(() => { if (el) el.scrollTop = top })
+}
 const heroLoaded = ref(false)
 const postsRef = ref(null)
 const mistRef = ref(null)
