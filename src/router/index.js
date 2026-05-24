@@ -20,7 +20,7 @@ const routes = [
 ]
 
 export default createRouter({
-  history: createWebHistory(),
+  history: createWebHistory('/lris_blog/'),
   routes,
   scrollBehavior() {
     return { top: 0 }
