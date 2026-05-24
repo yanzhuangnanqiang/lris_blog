@@ -244,7 +244,7 @@ onMounted(() => {
 
 /* ===== Hero：标题在上四分点 ===== */
 .hero { width: 100%; height: 100vh; position: relative; overflow: hidden; }
-.hero-bg { position: fixed; top: 0; left: 0; width: 100%; height: 100vh; z-index: 0; pointer-events: none; }
+.hero-bg { position: fixed; top: 0; left: 0; width: 100%; height: 100vh; z-index: -1; pointer-events: none; }
 .hero-bg img { width: 100%; height: 100%; object-fit: contain; filter: blur(0px) brightness(0.9); pointer-events: none; }
 .hero-bg-fade { position: absolute; inset: 0; background: linear-gradient(to bottom, rgba(248,246,255,0.2) 30%, rgba(248,246,255,0.7) 70%, #f8f6ff 100%); }
 .hero-content {
