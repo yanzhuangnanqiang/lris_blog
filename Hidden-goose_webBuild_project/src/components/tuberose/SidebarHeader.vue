@@ -1,8 +1,8 @@
 <template>
   <div class="header">
     <img class="avatar" src="@/assets/avatar.jpg" alt="avatar" />
-    <h2 class="site-name">夜航星归处</h2>
-    <p class="site-desc">在深蓝尽头等你</p>
+    <h2 class="site-name">技术笔记</h2>
+    <p class="site-desc">踩坑 · 总结 · 沉淀</p>
   </div>
 </template>
 

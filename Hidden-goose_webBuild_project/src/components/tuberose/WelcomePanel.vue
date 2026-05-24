@@ -9,9 +9,9 @@
 <template>
   <div class="welcome">
     <img class="brand-icon" src="@/assets/tubarose.png" alt="黛尾花" />
-    <h1 class="main-title">夜航星归处</h1>
-    <p class="sub-title">晚安，赛琳娜</p>
-    <p class="desc">在深蓝的尽头，黛尾花静静开着。这里是沉默的守夜人，收集星光与思緒。</p>
+    <h1 class="main-title">技术笔记</h1>
+    <p class="sub-title">记录踩过的坑与闪过的光</p>
+    <p class="desc">前端、算法、工程化… 把碎片化的理解整理成可复用的知识。</p>
   </div>
 </template>
 

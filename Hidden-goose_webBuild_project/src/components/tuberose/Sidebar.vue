@@ -7,18 +7,17 @@
  * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
 -->
 <template>
-  <aside class="sidebar" :class="{ collapsed: theme.isSidebarCollapsed }">
+  <aside class="sidebar" :class="theme.isSidebarCollapsed ? 'panel-right-close' : 'panel-right-open'">
     <div class="sidebar-inner">
-      <div class="top-controls">
-        <button class="lang-btn">中</button>
-        <button class="collapse-btn" @click="theme.toggleSidebar">
-          ◀
+      <div class="top-row">
+        <button class="collapse-btn" @click="theme.toggleSidebar" title="收起侧边栏">
+          <img src="@/assets/panel-right-close.svg" alt="收起" />
         </button>
       </div>
       <SidebarHeader />
       <SidebarNav />
       <SidebarFilters />
-      <SidebarNoteList />
+      <SidebarNoteList :selected-id="selectedId" @select="id => $emit('select', id)" />
       <SidebarFooter />
     </div>
   </aside>
@@ -32,6 +31,8 @@ import SidebarFilters from './SidebarFilters.vue'
 import SidebarNoteList from './SidebarNoteList.vue'
 import SidebarFooter from './SidebarFooter.vue'
 
+defineProps({ selectedId: { type: String, default: null } })
+defineEmits(['select'])
 const theme = useAppStore()
 </script>
 
@@ -39,12 +40,13 @@ const theme = useAppStore()
 .sidebar {
   position: fixed;          /* 必须固定，否则 transform 失效 */
   left: 0;
-  top: 0;
+  top: 54px;
   z-index: 10;
 
   width: 25%;
   min-width: 280px;
-  height: 100%;
+  max-width: 520px;
+  height: calc(100% - 54px);
   background: rgba(30, 42, 50, 0.5);
   backdrop-filter: blur(20px);
   border-right: 1px solid var(--glass-border);
@@ -55,42 +57,71 @@ const theme = useAppStore()
   /* 动画 */
   transition: transform 0.3s ease;
   transform: translateX(0);
-  padding-top: 40px;
 }
 
 /* 收缩态：完全移出屏幕 */
-.sidebar.collapsed {
+.sidebar.panel-right-close {
   transform: translateX(-100%);
 }
 
 /* 收缩后隐藏内部，防止滚动条/按钮残留 */
-.sidebar.collapsed .sidebar-inner {
+.sidebar.panel-right-close .sidebar-inner {
   visibility: hidden;
   /* 或者用 opacity: 0; transition: opacity 0.2s; 更柔和 */
 }
 
 .sidebar-inner {
   padding: 20px 16px;
-  padding-top: 24px;       /* 给顶部控件留呼吸空间 */
   overflow-y: auto;
   height: 100%;
   display: flex;
   flex-direction: column;
 }
 
-.top-controls {
+.top-row {
   display: flex;
-  justify-content: space-between;
-  margin-bottom: 25px;
+  justify-content: flex-end;
+  margin-bottom: 8px;
+}
+.collapse-btn {
+  background: transparent;
+  border: none;
+  padding: 4px;
+  cursor: pointer;
+  opacity: 0.3;
+  transition: opacity 0.2s;
+  display: flex;
+  position: relative;
+  animation: btnHint 2.5s ease-in-out infinite;
+}
+.collapse-btn:hover { opacity: 0.7; animation: none; }
+.collapse-btn img { width: 18px; height: 18px; }
+.collapse-btn::after {
+  content: '收起侧边栏';
+  position: absolute;
+  left: calc(100% + 8px);
+  top: 50%;
+  transform: translateY(-50%);
+  white-space: nowrap;
+  font-size: 0.72rem;
+  color: rgba(255,255,255,0.8);
+  background: rgba(20,20,30,0.85);
+  padding: 4px 10px;
+  border-radius: 6px;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+.collapse-btn:hover::after { opacity: 1; }
+@keyframes btnHint {
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 0.6; }
 }
 
-.collapse-btn, .lang-btn {
-  background: var(--glass-bg);
-  border: 1px solid var(--glass-border);
-  color: var(--cold-white);
-  padding: 4px 10px;
-  border-radius: 12px;
-  cursor: pointer;
-  font-size: 0.85rem;
+@media (max-width: 1200px) {
+  .sidebar { width: 300px; min-width: 300px; max-width: 300px; }
+}
+@media (max-width: 860px) {
+  .sidebar { width: 260px; min-width: 260px; max-width: 260px; }
 }
 </style>

@@ -312,14 +312,14 @@ function bg(i) {
 </script>
 
 <style scoped>
-.share-page { width: 100%; height: 100%; overflow: hidden; position: relative; background: linear-gradient(180deg, var(--page-top) 0%, var(--page-bottom) 100%); }
+.share-page { width: 100%; height: 100%; overflow: hidden; position: relative; background: linear-gradient(180deg, #f8f4ff 0%, #ece0f4 40%, #d8cce8 100%); }
 
 .scroller {
   width: 100%; height: 100%; overflow-y: auto;
   scrollbar-width: thin; scrollbar-color: var(--mint-green) transparent;
 }
 .scroller::-webkit-scrollbar { width: 6px; }
-.scroller::-webkit-scrollbar-thumb { background: var(--mint-green); border-radius: 3px; }
+.scroller::-webkit-scrollbar-thumb { background: rgba(111,66,193,0.3); border-radius: 3px; }
 
 /* ---- Hero ---- */
 .hero { width: 100%; height: 55vh; position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; overflow: hidden; }

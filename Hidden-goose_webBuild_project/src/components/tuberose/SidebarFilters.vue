@@ -2,7 +2,7 @@
   <div class="filters">
     <span class="filter-tag">📄 12 篇</span>
     <span class="filter-tag">📅 2025</span>
-    <span class="filter-tag">🔖 黛尾手记</span>
+    <span class="filter-tag">🔖 技术笔记</span>
   </div>
 </template>
 

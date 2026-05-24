@@ -1,18 +1,18 @@
 <template>
-  <div class="note-card">
+  <div class="note-card" :class="{ active }" @click="$emit('select')">
     <h3 class="note-title">{{ note.title }}</h3>
     <div class="note-meta">
       <span>{{ note.date }}</span>
-      <span>· {{ note.likes }} 赞</span>
     </div>
-    <span class="note-path">{{ note.path }}</span>
+    <div class="note-tags">
+      <span v-for="t in note.tags" :key="t" class="ntag">{{ t }}</span>
+    </div>
   </div>
 </template>
 
 <script setup>
-defineProps({
-  note: Object
-})
+defineProps({ note: Object, active: Boolean })
+defineEmits(['select'])
 </script>
 
 <style scoped>
@@ -29,6 +29,10 @@ defineProps({
 .note-card:hover {
   background: rgba(220, 230, 240, 0.2);
 }
+.note-card.active {
+  background: rgba(111,66,193,0.25);
+  border-color: rgba(111,66,193,0.4);
+}
 .note-title {
   font-size: 0.95rem;
   font-weight: 500;
@@ -38,10 +42,14 @@ defineProps({
 .note-meta {
   font-size: 0.7rem;
   color: #9eabb5;
-  margin-bottom: 4px;
+  margin-bottom: 6px;
 }
-.note-path {
-  font-size: 0.65rem;
-  color: #7b8893;
+.note-tags { display: flex; flex-wrap: wrap; gap: 4px; }
+.ntag {
+  font-size: 0.62rem;
+  padding: 2px 7px;
+  border-radius: 8px;
+  background: rgba(255,255,255,0.08);
+  color: rgba(255,255,255,0.45);
 }
 </style>
