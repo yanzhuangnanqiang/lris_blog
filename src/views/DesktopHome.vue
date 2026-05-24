@@ -72,7 +72,7 @@
               @click="router.push(`/post/${post.id}`)"
             >
               <div class="post-left">
-                <img :src="post.photoSrc" :alt="post.title" />
+                <img :src="post.photoSrc" :alt="post.title" loading="lazy" decoding="async" />
               </div>
               <div class="post-right">
                 <div class="post-meta">
