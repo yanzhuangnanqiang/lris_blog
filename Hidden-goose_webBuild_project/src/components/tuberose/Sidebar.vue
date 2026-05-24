@@ -76,7 +76,9 @@ const theme = useAppStore()
   height: 100%;
   display: flex;
   flex-direction: column;
+  scrollbar-width: none;
 }
+.sidebar-inner::-webkit-scrollbar { display: none; }
 
 .top-row {
   display: flex;

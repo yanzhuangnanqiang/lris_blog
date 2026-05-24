@@ -22,5 +22,7 @@ defineEmits(['select'])
 .note-list {
   flex: 1;
   overflow-y: auto;
+  scrollbar-width: none;
 }
+.note-list::-webkit-scrollbar { display: none; }
 </style>

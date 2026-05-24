@@ -1,10 +1,16 @@
 <template>
   <div class="filters">
-    <span class="filter-tag">📄 12 篇</span>
-    <span class="filter-tag">📅 2025</span>
+    <span class="filter-tag">📄 {{ notes.length }} 篇</span>
+    <span class="filter-tag">📅 {{ currentYear }}</span>
     <span class="filter-tag">🔖 技术笔记</span>
   </div>
 </template>
+
+<script setup>
+import { computed } from 'vue'
+import { notes } from '@/data/loadNotes'
+const currentYear = computed(() => new Date().getFullYear())
+</script>
 
 <style scoped>
 .filters {
