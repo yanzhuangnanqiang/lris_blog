@@ -23,7 +23,7 @@
       </section>
 
       <!-- 导航锚点：中间偏下，替代搜索栏的功能位置 -->
-      <nav class="about-nav" :class="{ active: collapsed }">
+      <nav class="about-nav" :class="{ scrolled: collapsed }" :style="navStyle">
         <button
           v-for="sec in sections"
           :key="sec.id"
@@ -41,7 +41,7 @@
         <section id="intro" class="sect" ref="sectRefs.intro">
           <div class="glass-card intro-card">
             <div class="avatar-wrap">
-              <img src="https://github.com/yanzhuangnanqiang.png" alt="avatar" class="avatar" />
+              <img :src="avatar" alt="avatar" class="avatar" />
               <div class="avatar-ring"></div>
             </div>
             <h2 class="name">Hidden Goose</h2>
@@ -92,25 +92,17 @@
             <div class="t-item">
               <div class="t-dot"></div>
               <div class="t-content glass-card">
-                <span class="t-time">2024 — 至今</span>
-                <h4>个人全栈博客「林间初见」</h4>
-                <p>用 Next.js + Tailwind 重构了三次，终于找到一个让自己舒服的书写界面。集成了音乐播放器、GitHub 动态、RSS 订阅。</p>
-              </div>
-            </div>
-            <div class="t-item">
-              <div class="t-dot"></div>
-              <div class="t-content glass-card">
-                <span class="t-time">2023 — 2024</span>
-                <h4>计算化学工具集</h4>
-                <p>在 WSL2 / Ubuntu 环境下整合 GROMACS、RMSF 分析流程，写了一套自用脚本。后来意识到：工具的价值在于被忘记——最好的脚本用完就忘。</p>
+                <span class="t-time">2026/5/13 — 至今</span>
+                <h4>个人博客「林间初见」</h4>
+                <p>用 Vue 前端框架做的静态博客,尝试在github上发布。集成了音乐播放器、GitHub 动态、RSS 订阅。</p>
               </div>
             </div>
             <div class="t-item">
               <div class="t-dot"></div>
               <div class="t-content glass-card">
                 <span class="t-time">更早</span>
-                <h4>开始写代码</h4>
-                <p>从 C++ 的指针和内存泄漏开始，一路逃到 JavaScript 的闭包，最后发现所有语言都在讲同一件事：如何把混乱整理成秩序。</p>
+                <h4>开始做项目</h4>
+                <p>在大一下学期,因为兴趣做了一个大鱼吃小鱼的游戏,花了许多天时间吧</p>
               </div>
             </div>
           </div>
@@ -121,10 +113,10 @@
           <h3 class="sect-title">兴趣</h3>
           <div class="glass-card interest-card">
             <ul class="interest-list">
-              <li><span class="li-dot"></span>阅读 —— 技术书与科幻小说混读，导致经常分不清现实和赛博朋克</li>
-              <li><span class="li-dot"></span>音乐 —— 写代码时必须有背景音，偏好 post-rock 和钢琴独奏</li>
-              <li><span class="li-dot"></span>散步 —— 没有目的地的走路是最好的调试方式</li>
-              <li><span class="li-dot"></span>整理笔记 —— 用 Obsidian 维护了一个超过 500 篇的私有知识库</li>
+              <li><span class="li-dot"></span>阅读 —— 技术书与科幻小说混读，也偶尔读一些诗歌</li>
+              <li><span class="li-dot"></span>音乐 —— 写代码时必须有背景音，喜欢mc的背景音乐和钢琴独奏</li>
+              <li><span class="li-dot"></span>跑步 —— 我是一个跑步爱好者</li>
+              <li><span class="li-dot"></span>整理笔记 —— 用 Obsidian 和 花笺 来写一些笔记</li>
             </ul>
           </div>
         </section>
@@ -159,6 +151,8 @@ import TopBar from '@/components/app/TopBar.vue'
 import MusicDock from '@/components/Player/MusicDock.vue'
 import aboutBg from '@/assets/saiset/竖屏/2.jpg'
 
+const avatar = new URL('../assets/avatar.jpg', import.meta.url).href
+
 const scrollerRef = ref(null)
 const scrollPct = ref(0)
 const collapsed = ref(false)
@@ -179,6 +173,18 @@ const sectRefs = {
   interest: ref(null),
   contact: ref(null),
 }
+
+const navStyle = computed(() => {
+  const p = Math.min(1, Math.max(0, (scrollPct.value - 0.08) / 0.32))
+  const bgAlpha = (p * 0.2).toFixed(2)
+  const blurPx = (p * 10).toFixed(1)
+  return {
+    top: `calc(${(56 * (1 - p)).toFixed(1)}vh + ${(56 * p).toFixed(1)}px)`,
+    background: `rgba(255,255,255,${bgAlpha})`,
+    backdropFilter: `blur(${blurPx}px)`,
+    WebkitBackdropFilter: `blur(${blurPx}px)`,
+  }
+})
 
 const fogStyle = computed(() => {
   const p = scrollPct.value
@@ -267,17 +273,11 @@ onMounted(() => {
 
 /* ===== 导航：中间偏下，点击滚动到对应章节 ===== */
 .about-nav {
-  position: absolute; top: 56vh; left: 50%; transform: translateX(-50%);
-  z-index: 3; display: flex; gap: 8px; flex-wrap: wrap; justify-content: center;
-  max-width: 600px; padding: 0 24px;
-  transition: all 0.4s ease;
-}
-.about-nav.active {
-  position: sticky; top: 56px; left: auto; transform: none;
-  margin: 0 auto; padding: 8px 24px 0; z-index: 99;
-  background: rgba(255,255,255,0.2);
-  backdrop-filter: blur(10px);
-  border-radius: 0 0 16px 16px;
+  position: fixed; left: 50%; transform: translateX(-50%);
+  z-index: 50; display: flex; gap: 8px; flex-wrap: wrap; justify-content: center;
+  padding: 6px 12px;
+  border-radius: 20px;
+  transition: top 0.5s cubic-bezier(0.4, 0, 0.2, 1);
 }
 .nav-pill {
   padding: 6px 16px; border-radius: 20px;
@@ -325,7 +325,7 @@ onMounted(() => {
 }
 
 /* ===== 简介卡片 ===== */
-.intro-card { padding: 36px 32px 28px; text-align: center; }
+.intro-card { padding: 36px 32px 28px; text-align: center; margin-left: -12px; }
 .avatar-wrap { position: relative; width: 88px; height: 88px; margin: 0 auto 16px; }
 .avatar {
   width: 100%; height: 100%; border-radius: 50%; object-fit: cover;
@@ -409,6 +409,9 @@ onMounted(() => {
 
 @media (max-width: 540px) {
   .hero-title { font-size: 2.2rem; }
+  .about-nav { gap: 4px; padding: 6px 8px 0; }
+  .about-nav.scrolled { opacity: 0; pointer-events: none; transition: opacity 0.3s; }
+  .nav-pill { padding: 4px 10px; font-size: 0.7rem; letter-spacing: 1px; }
   .content { width: calc(100% - 32px); }
   .intro-card, .t-content { padding: 24px 20px; }
   .meta-row { gap: 20px; }
