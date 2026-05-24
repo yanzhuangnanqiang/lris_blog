@@ -6,7 +6,7 @@
     <MusicDock />
 
     <div ref="scrollerRef" class="scroller" @scroll="onScroll">
-      <section class="hero">
+      <section class="hero" @click="searchActive && (searchActive = false)">
         <div class="hero-content" :style="{ opacity: Math.max(0, 1 - scrollPct * 2) }">
           <h1 class="hero-title">Project</h1>
           <p class="hero-sub">于迷雾深处，代码自光中浮现</p>
@@ -19,13 +19,16 @@
       <div class="search-zone" :class="{ active: searchActive }">
         <div class="tool-search">
           <input
+            ref="searchInputRef"
             v-model="repoSearch"
             type="text"
             placeholder="搜索项目、技术栈或描述..."
             @keyup.enter="searchActive = true"
+            @keyup.esc="searchActive = false"
             @focus="searchActive = true"
+            @blur="setTimeout(() => { if (!document.activeElement?.closest('.search-zone')) searchActive = false }, 150)"
           />
-          <span v-if="repoSearch" class="search-clear" @click="repoSearch = ''; searchActive = false">✕</span>
+          <span v-if="repoSearch" class="search-clear" @click="repoSearch = ''">✕</span>
           <span v-else class="search-icon" @click="searchActive = true">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
           </span>
@@ -80,7 +83,7 @@
 </template>
 
 <script setup>
-import { computed, onMounted, ref } from 'vue'
+import { computed, nextTick, onMounted, ref, watch } from 'vue'
 import TopBar from '@/components/app/TopBar.vue'
 import MusicDock from '@/components/Player/MusicDock.vue'
 import xinliBg from '@/assets/xinli.png'
@@ -131,6 +134,18 @@ const fogStyle = computed(() => {
 })
 
 function onScroll() { scrollPct.value = Math.min(1, (scrollerRef.value?.scrollTop || 0) / (window.innerHeight * 0.8)) }
+
+// 搜索激活时，整个界面平滑上滚，搜索栏置顶
+watch(searchActive, async (val) => {
+  if (val) {
+    await nextTick()
+    const el = document.querySelector('.search-zone')
+    if (el && scrollerRef.value) {
+      const top = el.getBoundingClientRect().top + scrollerRef.value.scrollTop - 16
+      scrollerRef.value.scrollTo({ top, behavior: 'smooth' })
+    }
+  }
+})
 
 const calendarWeeks = ref([])
 const calendarStats = ref({ streak: 0 })
@@ -194,10 +209,10 @@ onMounted(async () => {
 .hint-line { display: block; width: 60px; height: 1px; background: rgba(123,104,238,0.3); animation: breathe 3s ease-in-out infinite; }
 @keyframes breathe { 0%,100% { opacity: 0.3; } 50% { opacity: 0.7; } }
 
-.search-zone { max-width: 520px; margin: 0 auto; padding: 24px 24px 0; position: relative; z-index: 3; transition: all 0.4s ease; }
-.search-zone.active { max-width: 720px; padding-top: 40px; }
+.search-zone { max-width: 520px; margin: -10vh auto 0; padding: 0 24px; position: relative; z-index: 3; transition: max-width 0.4s ease; }
+.search-zone.active { max-width: 720px; }
 .tool-search { position: relative; }
-.tool-search input { width: 100%; padding: 10px 38px 10px 14px; box-sizing: border-box; border: 1px solid rgba(255,255,255,0.25); border-radius: 14px; background: rgba(255,255,255,0.22); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); font-size: 0.85rem; color: #1a1a1a; letter-spacing: 1px; outline: none; transition: border-color 0.35s, box-shadow 0.35s; }
+.tool-search input { width: 100%; padding: 10px 38px 10px 14px; box-sizing: border-box; border: 1px solid rgba(0,0,0,0.12); border-radius: 14px; background: rgba(255,255,255,0.4); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); font-size: 0.85rem; color: #000; letter-spacing: 1px; outline: none; transition: border-color 0.35s, box-shadow 0.35s; }
 .tool-search input::placeholder { color: rgba(123,104,238,0.35); letter-spacing: 2px; }
 .tool-search input:focus { border-color: rgba(123,104,238,0.4); box-shadow: 0 0 0 4px rgba(123,104,238,0.08); }
 .tool-search .search-icon { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); opacity: 0.35; cursor: pointer; transition: 0.2s; color: #555; display: flex; align-items: center; }
@@ -206,7 +221,7 @@ onMounted(async () => {
 .search-clear:hover { color: #1a1a1a; }
 
 .filter-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
-.ftag { padding: 5px 14px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.2); background: rgba(255,255,255,0.12); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); font-size: 0.78rem; color: #444; cursor: pointer; letter-spacing: 1px; transition: 0.2s; }
+.ftag { padding: 5px 14px; border-radius: 20px; border: 1px solid rgba(0,0,0,0.1); background: rgba(255,255,255,0.4); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); font-size: 0.78rem; color: #222; cursor: pointer; letter-spacing: 1px; transition: 0.2s; }
 .ftag:hover, .ftag.active { background: rgba(123,104,238,0.2); border-color: rgba(123,104,238,0.35); color: #7B68EE; }
 
 .calendar-section { max-width: 720px; margin: 28px auto 0; padding: 0 24px 16px; transition: opacity 0.5s; }
