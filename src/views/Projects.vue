@@ -292,7 +292,7 @@ onMounted(async () => {
 
 <style scoped>
 .projects-page { width: 100%; height: 100%; overflow: hidden; position: relative; }
-.bg-fixed { position: fixed; inset: 0; background-size: cover; background-position: center 30%; z-index: 0; }
+.bg-fixed { position: fixed; inset: 0; background-size: cover; background-position: center 30%; z-index: 0; background-attachment: scroll; -webkit-background-size: cover; -webkit-transform: translateZ(0); transform: translateZ(0); }
 .fog-layer { position: fixed; inset: 0; z-index: 1; pointer-events: none; }
 
 .scroller { position: relative; z-index: 2; width: 100%; height: 100%; overflow-y: auto; scrollbar-width: thin; scrollbar-color: rgba(91,63,211,0.4) transparent; }

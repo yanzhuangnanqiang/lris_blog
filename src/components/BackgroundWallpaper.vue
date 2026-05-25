@@ -22,11 +22,14 @@ const resolvedSrc = computed(() => map[props.imageSrc] || null)
 <style scoped>
 .bg-wallpaper {
   position: fixed;
-  top: 0; left: 0;
-  width: 100%; height: 100%;
+  inset: 0;
   z-index: 0;
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
+  background-attachment: scroll;
+  -webkit-background-size: cover;
+  -webkit-transform: translateZ(0);
+  transform: translateZ(0);
 }
 </style>
