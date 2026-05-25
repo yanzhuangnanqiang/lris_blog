@@ -30,7 +30,7 @@
               <span v-for="t in selectedNote.tags" :key="t" class="rp-tag"># {{ t }}</span>
             </div>
           </div>
-          <div class="rp-body" v-html="selectedNote.bodyHtml"></div>
+          <div class="rp-body" v-html="renderedHtml"></div>
         </article>
       </template>
 
@@ -46,7 +46,7 @@
               <span v-for="t in selectedNote.tags" :key="t" class="rp-tag"># {{ t }}</span>
             </div>
           </div>
-          <div class="rp-body" v-html="selectedNote.bodyHtml"></div>
+          <div class="rp-body" v-html="renderedHtml"></div>
         </article>
 
         <div v-else class="archive-view">
@@ -107,14 +107,14 @@
 </template>
 
 <script setup>
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import TopBar from '@/components/app/TopBar.vue'
 import BackgroundWallpaper from '@/components/BackgroundWallpaper.vue'
 import Sidebar from '@/components/tuberose/Sidebar.vue'
 import WelcomePanel from '@/components/tuberose/WelcomePanel.vue'
 import PetalEffect from '@/components/tuberose/PetalEffect.vue'
 import { useAppStore } from '@/stores/theme'
-import { notes } from '@/data/loadNotes'
+import { notes, renderNote } from '@/data/loadNotes'
 
 const projectImgs = Object.values(import.meta.glob('@/assets/saiset/project/*.{jpg,jpeg,png,JPG,JPEG,PNG}', { eager: true, import: 'default' }))
 function noteImg(idx) { return projectImgs[idx % projectImgs.length] }
@@ -122,6 +122,17 @@ function noteImg(idx) { return projectImgs[idx % projectImgs.length] }
 const theme = useAppStore()
 const selectedId = ref(null)
 const selectedNote = computed(() => notes.find(n => n.id === selectedId.value) || null)
+const renderedHtml = ref('')
+
+watch(selectedId, async (id) => {
+  if (!id) { renderedHtml.value = ''; return }
+  const note = notes.find(n => n.id === id)
+  if (!note) return
+  if (note.bodyHtml) { renderedHtml.value = note.bodyHtml; return }
+  renderedHtml.value = await renderNote(note)
+  note.bodyHtml = renderedHtml.value
+})
+
 const coverImg = computed(() => {
   if (!selectedNote.value) return null
   const idx = notes.findIndex(n => n.id === selectedNote.value.id)
