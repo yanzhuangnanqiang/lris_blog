@@ -4,18 +4,19 @@
 
 <script setup>
 import { computed } from 'vue'
+import yeguang from '@/assets/yeguang.jpg'
+import xiaguang from '@/assets/xiaguang.jpg'
 
 const props = defineProps({
   imageSrc: { type: String, required: true }
 })
 
-// 静态导入 wallpapers，确保构建时加上 hash
-const wallpapers = import.meta.glob('@/assets/*.{jpg,jpeg,png}', { eager: true, import: 'default' })
+const map = {
+  'yeguang.jpg': yeguang,
+  'xiaguang.jpg': xiaguang,
+}
 
-const resolvedSrc = computed(() => {
-  const key = Object.keys(wallpapers).find(k => k.endsWith('/' + props.imageSrc))
-  return key ? wallpapers[key] : null
-})
+const resolvedSrc = computed(() => map[props.imageSrc] || null)
 </script>
 
 <style scoped>
