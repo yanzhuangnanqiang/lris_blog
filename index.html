@@ -7,6 +7,13 @@
     <title>林间初见，难忘夏光</title>
   </head>
   <body>
+    <script>
+      // SPA 子路由恢复：404.html 跳转过来后恢复原始路径
+      (function() {
+        var r = sessionStorage.getItem('r');
+        if (r) { sessionStorage.removeItem('r'); history.replaceState(null, '', r); }
+      })();
+    </script>
     <div id="app">
       <div id="loader">
         <style>
