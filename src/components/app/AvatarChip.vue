@@ -13,7 +13,8 @@
 </template>
 
 <script setup>
-const avatar = new URL('../../assets/avatar.jpg', import.meta.url).href
+import avatarImg from '@/assets/avatar.jpg'
+const avatar = avatarImg
 </script>
 
 <style scoped>
