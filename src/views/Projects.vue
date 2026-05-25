@@ -262,16 +262,23 @@ function dayClass(day) {
   return 'l4'
 }
 
+async function fetchWithTimeout(url, timeout = 8000) {
+  const ctrl = new AbortController()
+  const t = setTimeout(() => ctrl.abort(), timeout)
+  try { return await fetch(url, { signal: ctrl.signal }) }
+  finally { clearTimeout(t) }
+}
+
 onMounted(async () => {
   try {
-    const res = await fetch('https://api.github.com/users/yanzhuangnanqiang/repos?sort=updated&per_page=100', { cache: 'no-store' })
+    const res = await fetchWithTimeout('https://api.github.com/users/yanzhuangnanqiang/repos?sort=updated&per_page=100')
     if (!res.ok) throw new Error(`${res.status}`)
     const data = await res.json()
     repos.value = data.filter(r => !r.fork).sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at))
-  } catch (e) { error.value = e?.message || String(e) }
+  } catch (e) { error.value = e?.name === 'AbortError' ? '请求超时' : (e?.message || String(e)) }
   finally { loading.value = false }
   try {
-    const cres = await fetch('https://github-contributions-api.deno.dev/yanzhuangnanqiang.json', { cache: 'no-store' })
+    const cres = await fetchWithTimeout('https://github-contributions-api.deno.dev/yanzhuangnanqiang.json')
     if (cres.ok) {
       const json = await cres.json()
       let raw = json.contributions || json
