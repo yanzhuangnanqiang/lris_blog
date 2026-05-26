@@ -40,7 +40,7 @@ export const notes = Object.entries(noteModules)
 let _renderer = null
 async function ensureRenderer() {
   if (_renderer) return _renderer
-  const [{ Marked }, { markedHighlight }, hljs, bash, javascript, typescript, css, xml, python, json, markdown, yaml, powershell] = await Promise.all([
+  const [{ Marked }, { markedHighlight }, hljsMod, bash, javascript, typescript, css, xml, python, json, markdown, yaml, powershell] = await Promise.all([
     import('marked'),
     import('marked-highlight'),
     import('highlight.js/lib/core'),
@@ -55,6 +55,7 @@ async function ensureRenderer() {
     import('highlight.js/lib/languages/yaml'),
     import('highlight.js/lib/languages/powershell'),
   ])
+  const hljs = hljsMod.default
   hljs.registerLanguage('bash', bash.default)
   hljs.registerLanguage('javascript', javascript.default)
   hljs.registerLanguage('typescript', typescript.default)

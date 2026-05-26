@@ -1,0 +1,4 @@
+查询的NS地址            云解析系统分配的NS地址
+dns25.hichina.com  dns26.hichina.com
+dns25.hichina.com  dns26.hichina.com
+
