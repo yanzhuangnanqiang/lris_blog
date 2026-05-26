@@ -119,17 +119,25 @@ const mistRef = ref(null)
 const scrollProgress = ref(0)
 const mistLifted = ref(false)
 
-function onScroll() {
-  const scroller = document.querySelector('.scroller')
-  if (!scroller) return
-  const heroH = scroller.clientHeight // 100vh
-  const y = scroller.scrollTop
-  scrollProgress.value = Math.min(y / (heroH * 0.6), 1)
+let scrollerEl = null
+let scrollRafId = null
 
-  // 雾散触发：滚动超过 hero 的 40%
-  if (y > heroH * 0.4 && !mistLifted.value) {
-    mistLifted.value = true
-  }
+function onScroll() {
+  if (scrollRafId) return
+  scrollRafId = requestAnimationFrame(() => {
+    scrollRafId = null
+    if (!scrollerEl) return
+    const heroH = scrollerEl.clientHeight
+    const y = scrollerEl.scrollTop
+    scrollProgress.value = Math.min(y / (heroH * 0.6), 1)
+
+    // 双向阈值：往下 40% 雾散，往上退回 20% 雾聚，避免临界抖动
+    if (y > heroH * 0.4) {
+      mistLifted.value = true
+    } else if (y < heroH * 0.2) {
+      mistLifted.value = false
+    }
+  })
 }
 
 const categories = computed(() => {
@@ -204,9 +212,9 @@ function onDragEnd() {
 }
 
 onMounted(() => {
-  const scroller = document.querySelector('.scroller')
-  if (scroller) {
-    scroller.addEventListener('scroll', onScroll, { passive: true })
+  scrollerEl = document.querySelector('.scroller')
+  if (scrollerEl) {
+    scrollerEl.addEventListener('scroll', onScroll, { passive: true })
   }
   onScroll()
   window.addEventListener('mousemove', onMove)
@@ -215,8 +223,10 @@ onMounted(() => {
   window.addEventListener('touchend', onDragEnd)
 })
 onUnmounted(() => {
-  const scroller = document.querySelector('.scroller')
-  if (scroller) scroller.removeEventListener('scroll', onScroll)
+  if (scrollRafId) cancelAnimationFrame(scrollRafId)
+  if (scrollerEl) {
+    scrollerEl.removeEventListener('scroll', onScroll)
+  }
   window.removeEventListener('mousemove', onMove)
   window.removeEventListener('mouseup', onDragEnd)
   window.removeEventListener('touchmove', onMove)
@@ -241,6 +251,8 @@ onUnmounted(() => {
   z-index: 1;
   scrollbar-width: thin;
   scrollbar-color: var(--mint-green) transparent;
+  touch-action: pan-y;
+  -webkit-overflow-scrolling: touch;
 }
 .scroller::-webkit-scrollbar { width: 6px; }
 .scroller::-webkit-scrollbar-thumb { background: var(--mint-green); border-radius: 3px; }
@@ -467,6 +479,7 @@ onUnmounted(() => {
   animation: spotIn 1s ease both;
   cursor: grab;
   text-shadow: 0 1px 3px rgba(0,0,0,0.3);
+  touch-action: none;
 }
 
 .theme-mint {
@@ -569,6 +582,7 @@ onUnmounted(() => {
   z-index: 2;
   padding: 80px 0 40px;
   background: linear-gradient(180deg, rgba(184,212,184,0.45) 0%, var(--page-bottom) 100%);
+  will-change: transform;
 }
 
 /* 雾层 */
