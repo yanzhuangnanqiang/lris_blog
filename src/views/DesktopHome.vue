@@ -120,24 +120,18 @@ const scrollProgress = ref(0)
 const mistLifted = ref(false)
 
 let scrollerEl = null
-let scrollRafId = null
 
 function onScroll() {
-  if (scrollRafId) return
-  scrollRafId = requestAnimationFrame(() => {
-    scrollRafId = null
-    if (!scrollerEl) return
-    const heroH = scrollerEl.clientHeight
-    const y = scrollerEl.scrollTop
-    scrollProgress.value = Math.min(y / (heroH * 0.6), 1)
+  if (!scrollerEl) return
+  const heroH = scrollerEl.clientHeight
+  const y = scrollerEl.scrollTop
+  scrollProgress.value = Math.min(y / (heroH * 0.6), 1)
 
-    // 双向阈值：往下 40% 雾散，往上退回 20% 雾聚，避免临界抖动
-    if (y > heroH * 0.4) {
-      mistLifted.value = true
-    } else if (y < heroH * 0.2) {
-      mistLifted.value = false
-    }
-  })
+  if (y > heroH * 0.4) {
+    mistLifted.value = true
+  } else if (y < heroH * 0.2) {
+    mistLifted.value = false
+  }
 }
 
 const categories = computed(() => {
@@ -223,7 +217,6 @@ onMounted(() => {
   window.addEventListener('touchend', onDragEnd)
 })
 onUnmounted(() => {
-  if (scrollRafId) cancelAnimationFrame(scrollRafId)
   if (scrollerEl) {
     scrollerEl.removeEventListener('scroll', onScroll)
   }
