@@ -76,9 +76,7 @@ const visibleItems = computed(() => filteredItems.value.slice(0, perPage.value))
 .scroller {
   width: 100%; height: 100%;
   overflow-y: auto;
-  scrollbar-color: var(--mint-green) transparent;
 }
-.scroller::-webkit-scrollbar-thumb { background: var(--mint-green); }
 
 .container { max-width: 960px; width: min(960px, calc(100vw - 48px)); margin: 0 auto; padding: 90px 0 40px; }
 

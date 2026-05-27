@@ -60,11 +60,7 @@ const post = computed(() => posts.find(p => p.id === route.params.id))
   width: 100%;
   height: 100%;
   overflow-y: auto;
-  scrollbar-width: thin;
-  scrollbar-color: var(--mint-green) transparent;
 }
-.detail-scroller::-webkit-scrollbar { width: 6px; }
-.detail-scroller::-webkit-scrollbar-thumb { background: var(--mint-green); border-radius: 3px; }
 
 .detail-container {
   max-width: 720px;

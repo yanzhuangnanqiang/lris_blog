@@ -295,8 +295,7 @@ onMounted(async () => {
 .bg-fixed { position: fixed; inset: 0; background-size: cover; background-position: center 30%; z-index: 0; }
 .fog-layer { position: fixed; inset: 0; z-index: 1; pointer-events: none; }
 
-.scroller { position: relative; z-index: 2; width: 100%; height: 100%; overflow-y: auto; scrollbar-color: rgba(91,63,211,0.4) transparent; }
-.scroller::-webkit-scrollbar-thumb { background: rgba(91,63,211,0.4); }
+.scroller { position: relative; z-index: 2; width: 100%; height: 100%; overflow-y: auto; }
 
 .hero { width: 100%; height: 77vh; position: relative; box-sizing: border-box; }
 .hero-content { position: absolute; top: 25vh; left: 50%; transform: translateX(-50%); text-align: center; transition: all 0.4s ease; }

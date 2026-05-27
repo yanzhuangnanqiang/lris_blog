@@ -209,11 +209,7 @@ const filteredArchive = computed(() => {
   border: 1px solid rgba(255,255,255,0.1);
   border-radius: 18px;
   color: rgba(230,235,240,0.92);
-  scrollbar-width: thin;
-  scrollbar-color: rgba(111,66,193,0.25) transparent;
 }
-.reader-panel::-webkit-scrollbar { height: 4px; }
-.reader-panel::-webkit-scrollbar-thumb { background: rgba(111,66,193,0.25); border-radius: 2px; }
 
 .rp-back {
   display: inline-block;

@@ -246,11 +246,10 @@ onUnmounted(() => {
   overflow-y: auto;
   position: relative;
   z-index: 1;
-  scrollbar-color: var(--mint-green) transparent;
   touch-action: pan-y;
   -webkit-overflow-scrolling: touch;
 }
-.scroller::-webkit-scrollbar-thumb { background: var(--mint-green); }
+
 
 /* ---- Hero ---- */
 .hero {
