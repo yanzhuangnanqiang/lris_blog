@@ -47,17 +47,18 @@ export const lifeJournal = [
   //   ],
   // },
   {
-    date: '2026-05-24',
-    items: [
-      { text: '这是第一篇说说，值得纪念！', photos: ['jinye.png'], tag: '新生' },
-    ],
-  },
-    {
     date: '2026-05-26',
     items: [
       { text: '什么东西啊，我都还没好好享受，我的显示屏就坏了，一圈一圈的坏点你们是怎么出来的啊！', photos: ['doroangry.gif'], tag: '悲剧' },
     ],
   },
+  {
+    date: '2026-05-24',
+    items: [
+      { text: '这是第一篇说说，值得纪念！', photos: ['jinye.png'], tag: '新生' },
+    ],
+  },
+   
 ].map(day => ({
   ...day,
   items: day.items.map(item => ({
