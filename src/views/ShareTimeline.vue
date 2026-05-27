@@ -32,9 +32,9 @@
             <div class="plan-col daily">
               <div class="plan-header">
                 <h3>☀️ 每日</h3>
-                <span class="plan-progress" :class="{ done: dailyProgress === 7 }">{{ dailyProgress }}/7</span>
+                <span class="plan-progress" :class="{ done: dailyProgress === plans.daily.length }">{{ dailyProgress }}/{{ plans.daily.length }}</span>
               </div>
-              <div class="plan-progress-bar"><span :style="{ width: (dailyProgress / 7 * 100) + '%' }"></span></div>
+              <div class="plan-progress-bar"><span :style="{ width: (dailyProgress / plans.daily.length * 100) + '%' }"></span></div>
               <label v-for="(t, i) in plans.daily" :key="'d'+i" class="plan-item">
                 <input type="checkbox" v-model="dailyDone[i]" />
                 <span class="plan-checkbox"></span>
@@ -44,9 +44,9 @@
             <div class="plan-col weekly">
               <div class="plan-header">
                 <h3>🌙 每周</h3>
-                <span class="plan-progress" :class="{ done: weeklyProgress === 7 }">{{ weeklyProgress }}/7</span>
+                <span class="plan-progress" :class="{ done: weeklyProgress === plans.weekly.length }">{{ weeklyProgress }}/{{ plans.weekly.length }}</span>
               </div>
-              <div class="plan-progress-bar"><span :style="{ width: (weeklyProgress / 7 * 100) + '%' }"></span></div>
+              <div class="plan-progress-bar"><span :style="{ width: (weeklyProgress / plans.weekly.length * 100) + '%' }"></span></div>
               <label v-for="(t, i) in plans.weekly" :key="'w'+i" class="plan-item">
                 <input type="checkbox" v-model="weeklyDone[i]" />
                 <span class="plan-checkbox"></span>
