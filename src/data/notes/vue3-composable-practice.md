@@ -3,6 +3,7 @@ title: Vue 3 组合式 API 实践指南
 date: 2025-04-15
 tags: [Vue, 前端,学习]
 summary: 从 Options API 迁移到 Composition API 的实战总结
+cover:3.jpeg
 ---
 
 ## 为什么用 Composition API

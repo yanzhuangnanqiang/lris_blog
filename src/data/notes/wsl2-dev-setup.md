@@ -3,6 +3,7 @@ title: WSL2 开发环境搭建笔记
 date: 2025-04-01
 tags: [工具, 环境, Linux,学习]
 summary: 在 Windows 上配置 WSL2 + Ubuntu 开发环境的完整流程
+cover:4.jpeg
 ---
 
 ## 安装 WSL2

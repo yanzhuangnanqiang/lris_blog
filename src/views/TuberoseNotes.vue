@@ -122,7 +122,7 @@ function noteImg(idx) { return notesImgs[idx % notesImgs.length] || '' }
 function noteImgForId(id) {
   let hash = 0
   for (let i = 0; i < id.length; i++) { hash = ((hash << 5) - hash) + id.charCodeAt(i); hash |= 0 }
-  return projectImgs[Math.abs(hash) % projectImgs.length]
+  return notesImgs[Math.abs(hash) % notesImgs.length] || ''
 }
 // frontmatter cover 字段手动指定封面 → 优先从 notes/ 找，再从 project/ 找
 function resolveCover(note) {

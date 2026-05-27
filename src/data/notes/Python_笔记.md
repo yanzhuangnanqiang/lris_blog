@@ -3,6 +3,7 @@ title: Python的 语法仓库
 date: 2025-5-27
 tags: [Python,语言,学习]
 summary: 将我在python学习中所遇到的等等问题整理为了一个备忘录，各位 也可以来看看啊
+cover:2.png
 ---
 
 
