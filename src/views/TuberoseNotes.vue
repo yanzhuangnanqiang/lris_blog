@@ -117,6 +117,8 @@ import { useAppStore } from '@/stores/theme'
 import { notes, renderNote } from '@/data/loadNotes'
 
 const projectImgModules = import.meta.glob('@/assets/saiset/project/*.{jpg,jpeg,png,JPG,JPEG,PNG}', { eager: true, import: 'default' })
+const noteCoverModules = import.meta.glob('@/assets/saiset/notes/*.{jpg,jpeg,png,JPG,JPEG,PNG,webp}', { eager: true, import: 'default' })
+const allImgModules = { ...projectImgModules, ...noteCoverModules }
 const projectImgs = Object.values(projectImgModules)
 function noteImg(idx) { return projectImgs[idx % projectImgs.length] }
 function noteImgForId(id) {
@@ -124,10 +126,10 @@ function noteImgForId(id) {
   for (let i = 0; i < id.length; i++) { hash = ((hash << 5) - hash) + id.charCodeAt(i); hash |= 0 }
   return projectImgs[Math.abs(hash) % projectImgs.length]
 }
-// frontmatter cover 字段手动指定封面：cover: 6.png → 匹配对应文件
+// frontmatter cover 字段手动指定封面 → 优先从 notes/ 找，再从 project/ 找
 function resolveCover(note) {
   if (!note.cover) return null
-  for (const [k, v] of Object.entries(projectImgModules)) {
+  for (const [k, v] of Object.entries(allImgModules)) {
     if (k.endsWith('/' + note.cover)) return v
   }
   return null
