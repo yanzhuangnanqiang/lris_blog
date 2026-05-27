@@ -1,7 +1,7 @@
 import { resolvePhotoSrc } from './sceneCards.js'
 
 // 说说专用：图片放 src/assets/share/，自动加载
-const shareImgs = import.meta.glob('@/assets/saiset/share/*.{jpg,jpeg,png,JPG,JPEG,PNG,webp}', { eager: true, import: 'default' })
+const shareImgs = import.meta.glob('@/assets/saiset/share/*.{jpg,jpeg,png,gif,JPG,JPEG,PNG,webp}', { eager: true, import: 'default' })
 const shareMap = Object.fromEntries(Object.entries(shareImgs).map(([p, u]) => [p.replace(/.*\//, ''), u]))
 function sharePhoto(name) { return shareMap[name] || name }
 
@@ -55,7 +55,7 @@ export const lifeJournal = [
     {
     date: '2026-05-26',
     items: [
-      { text: '什么东西啊，我都还没好好享受，我的显示屏就坏了，一圈一圈的坏点你们是怎么出来的啊！', photos: [''], tag: '新生' },
+      { text: '什么东西啊，我都还没好好享受，我的显示屏就坏了，一圈一圈的坏点你们是怎么出来的啊！', photos: ['doroangry'], tag: '新生' },
     ],
   },
 ].map(day => ({

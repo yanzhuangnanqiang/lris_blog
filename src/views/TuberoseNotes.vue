@@ -116,7 +116,7 @@ import PetalEffect from '@/components/tuberose/PetalEffect.vue'
 import { useAppStore } from '@/stores/theme'
 import { notes, renderNote } from '@/data/loadNotes'
 
-const notesImgModules = import.meta.glob('@/assets/saiset/notes/*.{jpg,jpeg,png,JPG,JPEG,PNG,webp}', { eager: true, import: 'default' })
+const notesImgModules = import.meta.glob('@/assets/saiset/notes/*.{jpg,jpeg,png,gif,JPG,JPEG,PNG,webp}', { eager: true, import: 'default' })
 const notesImgs = Object.values(notesImgModules)
 function noteImg(idx) { return notesImgs[idx % notesImgs.length] || '' }
 function noteImgForId(id) {

@@ -3,7 +3,7 @@ import { Marked } from 'marked'
 const marked = new Marked()
 
 // 文章卡片图：saiset/think/ 下按编号匹配（photo: '1' → think/1.png）
-const thinkModules = import.meta.glob('@/assets/saiset/think/*.{jpg,jpeg,png,JPG,JPEG,PNG,webp}', { eager: true, import: 'default' })
+const thinkModules = import.meta.glob('@/assets/saiset/think/*.{jpg,jpeg,png,gif,JPG,JPEG,PNG,webp}', { eager: true, import: 'default' })
 function resolveThinkPhoto(name) {
   if (!name) return null
   for (const [k, v] of Object.entries(thinkModules)) {
