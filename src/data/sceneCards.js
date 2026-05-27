@@ -1,20 +1,20 @@
-import p1 from '@/assets/saiset/1.png'
-import p2 from '@/assets/saiset/2.png'
-import p3 from '@/assets/saiset/3.png'
-import p4 from '@/assets/saiset/4.png'
-import p5 from '@/assets/saiset/5.png'
-import p6 from '@/assets/saiset/6.png'
-import p7 from '@/assets/saiset/7.png'
-import p8 from '@/assets/saiset/8.png'
-import p9 from '@/assets/saiset/9.png'
-import p10 from '@/assets/saiset/10.png'
-import p11 from '@/assets/saiset/11.png'
-import p12 from '@/assets/saiset/12.png'
-import p13 from '@/assets/saiset/13.jpg'
-import p14 from '@/assets/saiset/14.jpeg'
-import p15 from '@/assets/saiset/15.jpg'
-import p16 from '@/assets/saiset/16.jpg'
-import jinye from '@/assets/saiset/jinye.png'
+import p1 from '@/assets/saiset/gallery/1.png'
+import p2 from '@/assets/saiset/gallery/2.png'
+import p3 from '@/assets/saiset/gallery/3.png'
+import p4 from '@/assets/saiset/gallery/4.png'
+import p5 from '@/assets/saiset/gallery/5.png'
+import p6 from '@/assets/saiset/gallery/6.png'
+import p7 from '@/assets/saiset/gallery/7.png'
+import p8 from '@/assets/saiset/gallery/8.png'
+import p9 from '@/assets/saiset/gallery/9.png'
+import p10 from '@/assets/saiset/gallery/10.png'
+import p11 from '@/assets/saiset/gallery/11.png'
+import p12 from '@/assets/saiset/gallery/12.png'
+import p13 from '@/assets/saiset/gallery/13.jpg'
+import p14 from '@/assets/saiset/gallery/14.jpeg'
+import p15 from '@/assets/saiset/gallery/15.jpg'
+import p16 from '@/assets/saiset/gallery/16.jpg'
+import jinye from '@/assets/saiset/gallery/jinye.png'
 
 // 照片注册表 — 加了新照片在这里加一行
 const photoMap = {
@@ -29,7 +29,7 @@ const photoMap = {
  * 每行 = 一张照片名 + 一句文字 + 文字在哪一侧
  *
  * 加新卡：复制一行，改 photo / text / side 即可
- * 加新照片：放到 saiset 文件夹，在 photoMap 里加一行
+ * 加新照片：放到 saiset/gallery 文件夹，在 photoMap 里加一行
  */
 export const sceneCards = [
   { photo: '1',  text: '风穿过林间，像是把旧日的影子翻页。',           from: '— 随想', side: 'left' },
