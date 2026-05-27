@@ -1,7 +1,17 @@
 import { Marked } from 'marked'
-import { resolvePhotoSrc } from './sceneCards.js'
 
 const marked = new Marked()
+
+// 文章卡片图：saiset/think/ 下按编号匹配（photo: '1' → think/1.png）
+const thinkModules = import.meta.glob('@/assets/saiset/think/*.{jpg,jpeg,png,JPG,JPEG,PNG,webp}', { eager: true, import: 'default' })
+function resolveThinkPhoto(name) {
+  if (!name) return null
+  for (const [k, v] of Object.entries(thinkModules)) {
+    const base = k.replace(/.*\//, '').replace(/\.[^.]+$/, '')
+    if (base === name) return v
+  }
+  return null
+}
 
 function parseFrontmatter(raw) {
   const match = raw.match(/^---\s*\n([\s\S]*?)\n---\s*\n([\s\S]*)$/)
@@ -46,7 +56,7 @@ export const posts = Object.entries(postModules)
       date: meta.date || '',
       category: meta.category || '未分类',
       photo: meta.photo || '1',
-      photoSrc: resolvePhotoSrc(meta.photo || '1'),
+      photoSrc: resolveThinkPhoto(meta.photo || '1') || '',
       excerpt: extractExcerpt(body),
       bodyMd: body.trim(),
       bodyHtml: marked.parse(body.trim()),
@@ -54,10 +64,4 @@ export const posts = Object.entries(postModules)
   })
   .sort((a, b) => new Date(b.date) - new Date(a.date))
 
-/**
- * 按分类筛选
- */
-export function filterPosts(category) {
-  if (!category || category === 'all') return posts
-  return posts.filter(p => p.category === category)
-}
+

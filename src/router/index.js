@@ -17,6 +17,7 @@ const routes = [
   { path: '/about', name: 'About', component: () => import('@/views/About.vue') },
   { path: '/gallery', name: 'Gallery', component: () => import('@/views/PhotoGallery.vue') },
   { path: '/post/:id', name: 'Post', component: () => import('@/views/PostDetail.vue') },
+  { path: '/:pathMatch(.*)*', redirect: '/' },
 ]
 
 export default createRouter({

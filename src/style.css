@@ -12,6 +12,7 @@ html, body, #app {
 
 :root {
   /* 鸢尾与晨光 · 色板 */
+  --cold-white: #f8fafc;
   --mint-green: #b8d4b8;        /* 薄荷绿 */
   --mint-soft: rgba(155,195,165,0.55); /* 青绿标签 */
   --cream-white: #f2f4ef;       /* 奶白微绿 */
@@ -54,3 +55,10 @@ html, body, #app {
     transition-duration: 0.01ms !important;
   }
 }
+
+/* 全局滚动条 */
+.scroller {
+  scrollbar-width: thin;
+}
+.scroller::-webkit-scrollbar { width: 6px; }
+.scroller::-webkit-scrollbar-thumb { background: var(--scrollbar-thumb, rgba(0,0,0,0.15)); border-radius: 3px; }

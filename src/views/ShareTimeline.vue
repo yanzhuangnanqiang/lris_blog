@@ -307,10 +307,9 @@ function bg(i) {
 
 .scroller {
   width: 100%; height: 100%; overflow-y: auto;
-  scrollbar-width: thin; scrollbar-color: var(--mint-green) transparent;
+  scrollbar-color: var(--mint-green) transparent;
 }
-.scroller::-webkit-scrollbar { width: 6px; }
-.scroller::-webkit-scrollbar-thumb { background: rgba(111,66,193,0.3); border-radius: 3px; }
+.scroller::-webkit-scrollbar-thumb { background: rgba(111,66,193,0.3); }
 
 /* ---- Hero ---- */
 .hero { width: 100%; height: 55vh; position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; overflow: hidden; }

@@ -232,9 +232,8 @@ onMounted(() => {
 <style scoped>
 /* ===== 基础 ===== */
 .about-page { width: 100%; height: 100%; overflow: hidden; position: relative; }
-.scroller { position: relative; z-index: 2; width: 100%; height: 100%; overflow-y: auto; scrollbar-width: thin; scrollbar-color: rgba(91,63,211,0.25) transparent; }
-.scroller::-webkit-scrollbar { width: 6px; }
-.scroller::-webkit-scrollbar-thumb { background: rgba(91,63,211,0.25); border-radius: 3px; }
+.scroller { position: relative; z-index: 2; width: 100%; height: 100%; overflow-y: auto; scrollbar-color: rgba(91,63,211,0.25) transparent; }
+.scroller::-webkit-scrollbar-thumb { background: rgba(91,63,211,0.25); }
 
 /* ===== 背景：极淡紫灰渐变，无图 ===== */
 .bg-layer {

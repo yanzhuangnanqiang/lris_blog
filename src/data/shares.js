@@ -1,7 +1,7 @@
 import { resolvePhotoSrc } from './sceneCards.js'
 
 // 说说专用：图片放 src/assets/share/，自动加载
-const shareImgs = import.meta.glob('@/assets/share/*.{jpg,jpeg,png,JPG,JPEG,PNG,webp}', { eager: true, import: 'default' })
+const shareImgs = import.meta.glob('@/assets/saiset/share/*.{jpg,jpeg,png,JPG,JPEG,PNG,webp}', { eager: true, import: 'default' })
 const shareMap = Object.fromEntries(Object.entries(shareImgs).map(([p, u]) => [p.replace(/.*\//, ''), u]))
 function sharePhoto(name) { return shareMap[name] || name }
 
@@ -66,5 +66,4 @@ export const lifeJournal = [
   })),
 }))
 
-// 收集所有月份
-export const months = [...new Set(lifeJournal.map(d => d.date.slice(0, 7)))]
+

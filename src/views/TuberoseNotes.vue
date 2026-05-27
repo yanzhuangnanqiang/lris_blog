@@ -116,11 +116,9 @@ import PetalEffect from '@/components/tuberose/PetalEffect.vue'
 import { useAppStore } from '@/stores/theme'
 import { notes, renderNote } from '@/data/loadNotes'
 
-const projectImgModules = import.meta.glob('@/assets/saiset/project/*.{jpg,jpeg,png,JPG,JPEG,PNG}', { eager: true, import: 'default' })
-const noteCoverModules = import.meta.glob('@/assets/saiset/notes/*.{jpg,jpeg,png,JPG,JPEG,PNG,webp}', { eager: true, import: 'default' })
-const allImgModules = { ...projectImgModules, ...noteCoverModules }
-const projectImgs = Object.values(projectImgModules)
-function noteImg(idx) { return projectImgs[idx % projectImgs.length] }
+const notesImgModules = import.meta.glob('@/assets/saiset/notes/*.{jpg,jpeg,png,JPG,JPEG,PNG,webp}', { eager: true, import: 'default' })
+const notesImgs = Object.values(notesImgModules)
+function noteImg(idx) { return notesImgs[idx % notesImgs.length] || '' }
 function noteImgForId(id) {
   let hash = 0
   for (let i = 0; i < id.length; i++) { hash = ((hash << 5) - hash) + id.charCodeAt(i); hash |= 0 }
@@ -129,7 +127,7 @@ function noteImgForId(id) {
 // frontmatter cover 字段手动指定封面 → 优先从 notes/ 找，再从 project/ 找
 function resolveCover(note) {
   if (!note.cover) return null
-  for (const [k, v] of Object.entries(allImgModules)) {
+  for (const [k, v] of Object.entries(notesImgModules)) {
     if (k.endsWith('/' + note.cover)) return v
   }
   return null

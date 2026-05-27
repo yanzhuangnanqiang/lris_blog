@@ -147,8 +147,8 @@ export const useMusicStore = defineStore('music', () => {
   watch(volume, (v) => { if (audio) audio.volume = v; if (v > 0) muted.value = false })
 
   return {
-    idx, playing, currentTime, duration, seek, volume, muted, volBefore, loop,
-    current, bars, tracks,
+    idx, playing, currentTime, duration, seek, volume, muted, loop,
+    current, bars,
     toggle, next, prev, onSeek, toggleMute, fmt, loadTrack, initAnalyser,
   }
 })

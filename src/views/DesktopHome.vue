@@ -246,13 +246,11 @@ onUnmounted(() => {
   overflow-y: auto;
   position: relative;
   z-index: 1;
-  scrollbar-width: thin;
   scrollbar-color: var(--mint-green) transparent;
   touch-action: pan-y;
   -webkit-overflow-scrolling: touch;
 }
-.scroller::-webkit-scrollbar { width: 6px; }
-.scroller::-webkit-scrollbar-thumb { background: var(--mint-green); border-radius: 3px; }
+.scroller::-webkit-scrollbar-thumb { background: var(--mint-green); }
 
 /* ---- Hero ---- */
 .hero {
@@ -429,26 +427,6 @@ onUnmounted(() => {
   }
 }
 
-@keyframes goldShimmer {
-  0%, 100% {
-    text-shadow:
-      0 0 8px rgba(232,213,163,0.5),
-      0 0 16px rgba(0,0,0,0.25);
-  }
-  30% {
-    text-shadow:
-      0 0 10px rgba(255,245,200,1),
-      0 0 25px rgba(255,235,170,0.9),
-      0 0 50px rgba(240,210,140,0.6),
-      0 0 80px rgba(220,190,120,0.35),
-      0 0 18px rgba(0,0,0,0.35);
-  }
-  55% {
-    text-shadow:
-      0 0 9px rgba(232,213,163,0.55),
-      0 0 22px rgba(0,0,0,0.28);
-  }
-}
 
 /* ---- 光斑散落 ---- */
 .light-spots {
