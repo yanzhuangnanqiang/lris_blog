@@ -31,6 +31,7 @@ export const notes = Object.entries(noteModules)
       date: meta.date || '',
       tags: Array.isArray(meta.tags) ? meta.tags : (meta.tags ? [meta.tags] : []),
       summary: meta.summary || '',
+      cover: meta.cover || '',
       bodyMd: body.trim(),
       bodyHtml: null, // 延迟渲染，首次点开时计算
     }

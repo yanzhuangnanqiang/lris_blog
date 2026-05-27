@@ -74,7 +74,7 @@
               v-for="(note, idx) in filteredArchive"
               :key="note.id"
               class="av-card"
-              :style="{ backgroundImage: `url(${noteImgForId(note.id)})` }"
+              :style="{ backgroundImage: `url(${resolveCover(note) || noteImgForId(note.id)})` }"
               @click="selectedId = note.id"
             >
               <div class="avc-main">
@@ -116,12 +116,21 @@ import PetalEffect from '@/components/tuberose/PetalEffect.vue'
 import { useAppStore } from '@/stores/theme'
 import { notes, renderNote } from '@/data/loadNotes'
 
-const projectImgs = Object.values(import.meta.glob('@/assets/saiset/project/*.{jpg,jpeg,png,JPG,JPEG,PNG}', { eager: true, import: 'default' }))
+const projectImgModules = import.meta.glob('@/assets/saiset/project/*.{jpg,jpeg,png,JPG,JPEG,PNG}', { eager: true, import: 'default' })
+const projectImgs = Object.values(projectImgModules)
 function noteImg(idx) { return projectImgs[idx % projectImgs.length] }
 function noteImgForId(id) {
   let hash = 0
   for (let i = 0; i < id.length; i++) { hash = ((hash << 5) - hash) + id.charCodeAt(i); hash |= 0 }
   return projectImgs[Math.abs(hash) % projectImgs.length]
+}
+// frontmatter cover 字段手动指定封面：cover: 6.png → 匹配对应文件
+function resolveCover(note) {
+  if (!note.cover) return null
+  for (const [k, v] of Object.entries(projectImgModules)) {
+    if (k.endsWith('/' + note.cover)) return v
+  }
+  return null
 }
 
 const theme = useAppStore()
@@ -140,8 +149,7 @@ watch(selectedId, async (id) => {
 
 const coverImg = computed(() => {
   if (!selectedNote.value) return null
-  const idx = notes.findIndex(n => n.id === selectedNote.value.id)
-  return noteImg(idx)
+  return resolveCover(selectedNote.value) || noteImg(notes.findIndex(n => n.id === selectedNote.value.id))
 })
 const mainRef = ref(null)
 const showTopBtn = ref(false)
