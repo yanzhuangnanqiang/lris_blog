@@ -59,7 +59,7 @@ export const lifeJournal = [
     ],
   },
    
-].map(day => ({
+].sort((a, b) => new Date(b.date) - new Date(a.date)).map(day => ({
   ...day,
   items: day.items.map(item => ({
     ...item,
