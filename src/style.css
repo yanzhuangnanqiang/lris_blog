@@ -56,4 +56,8 @@ html, body, #app {
   }
 }
 
+/* 全局隐藏滚动条 */
+::-webkit-scrollbar { display: none; }
+* { scrollbar-width: none; }
+
 
