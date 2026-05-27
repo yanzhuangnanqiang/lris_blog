@@ -1,10 +1,10 @@
 <template>
-  <div class="panel" :class="{ playing: playing }">
+  <div class="panel" :class="{ playing: store.playing }">
     <div class="head">
       <div class="meta">
-        <div class="title">{{ current.title }}</div>
+        <div class="title">{{ store.current.title }}</div>
         <div class="artist">
-          <span class="artist-name" :style="{ color: artistColor }">{{ current.artist }}</span>
+          <span class="artist-name" :style="{ color: artistColor }">{{ store.current.artist }}</span>
           <span class="sep">·</span>
           <span class="tag">纯音乐</span>
         </div>
@@ -12,31 +12,31 @@
       <button class="x" @click="$emit('close')">✕</button>
     </div>
 
-    <div class="spectrum" :class="{ active: playing }">
-      <span v-for="n in 46" :key="n" class="bar" :style="{ height: bars[n-1] + 'px' }"></span>
+    <div class="spectrum" :class="{ active: store.playing }">
+      <span v-for="n in 46" :key="n" class="bar" :style="{ height: store.bars[n-1] + 'px' }"></span>
     </div>
 
     <div class="progress" @mouseenter="showTotal = true" @mouseleave="showTotal = false">
-      <span class="t">{{ fmt(currentTime) }}</span>
-      <input type="range" min="0" :max="duration || 100" step="0.1" v-model.number="seek" @input="onSeek" class="seek-bar" />
-      <span class="t total" :class="{ on: showTotal }">{{ fmt(duration) }}</span>
+      <span class="t">{{ store.fmt(store.currentTime) }}</span>
+      <input type="range" min="0" :max="store.duration || 100" step="0.1" :value="store.seek" @input="store.onSeek($event.target.value)" class="seek-bar" />
+      <span class="t total" :class="{ on: showTotal }">{{ store.fmt(store.duration) }}</span>
     </div>
 
     <div class="controls">
       <button class="ctrl" @click="like">
         <img :src="heartIcon" alt="" />
       </button>
-      <button class="ctrl" @click="prev">
+      <button class="ctrl" @click="store.prev">
         <img :src="skipBack" alt="" />
       </button>
       <button class="ctrl play" @click="toggle">
-        <img :src="playing ? pauseIcon : playIcon" alt="" />
+        <img :src="store.playing ? pauseIcon : playIcon" alt="" />
       </button>
-      <button class="ctrl" @click="next">
+      <button class="ctrl" @click="store.next">
         <img :src="skipForward" alt="" />
       </button>
-      <button class="ctrl" :class="{ on: loop }" @click="loop = !loop">
-        <img :src="loop ? loopOnIcon : loopOffIcon" alt="" />
+      <button class="ctrl" :class="{ on: store.loop }" @click="store.loop = !store.loop">
+        <img :src="store.loop ? loopOnIcon : loopOffIcon" alt="" />
       </button>
     </div>
 
@@ -45,17 +45,18 @@
     </div>
 
     <div class="volume">
-      <button class="vol-btn" @click="toggleMute">
+      <button class="vol-btn" @click="store.toggleMute">
         <img :src="volIcon" alt="" />
       </button>
-      <input type="range" min="0" max="1" step="0.05" v-model.number="volume" class="vol-bar" />
+      <input type="range" min="0" max="1" step="0.05" :value="store.volume" @input="store.volume = $event.target.value" class="vol-bar" />
       <span class="vol-spacer"></span>
     </div>
   </div>
 </template>
 
 <script setup>
-import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
+import { computed, onMounted, ref } from 'vue'
+import { useMusicStore } from '@/stores/music'
 
 import skipBack from '@/assets/skip-back.svg'
 import skipForward from '@/assets/skip-forward.svg'
@@ -68,34 +69,20 @@ import volHigh from '@/assets/volume-2.svg'
 import volLow from '@/assets/volume-1.svg'
 import volMuted from '@/assets/volume-off.svg'
 
-const props = defineProps({
-  tracks: { type: Array, required: true },
-})
-
 const emit = defineEmits(['play-state', 'close'])
+const store = useMusicStore()
 
-const idx = ref(0)
-const playing = ref(false)
-const currentTime = ref(0)
-const duration = ref(0)
-const seek = ref(0)
-const volume = ref(0.6)
-const muted = ref(false)
-const volBefore = ref(0.6)
 const showTotal = ref(false)
-const loop = ref(false)
-
-const current = computed(() => props.tracks[idx.value])
 
 const artistPalette = {
   'EP': '#9a8bb8',
   '赛琳娜': '#a08dba',
 }
-const artistColor = computed(() => artistPalette[current.value.artist] || '#9a8bb8')
+const artistColor = computed(() => artistPalette[store.current.artist] || '#9a8bb8')
 
 const volIcon = computed(() => {
-  if (muted.value || volume.value === 0) return volMuted
-  if (volume.value < 0.5) return volLow
+  if (store.muted || store.volume === 0) return volMuted
+  if (store.volume < 0.5) return volLow
   return volHigh
 })
 
@@ -115,139 +102,13 @@ function like() {
   for (let i = 0; i < 5; i++) setTimeout(spawnHeart, i * 80)
 }
 
-function toggleMute() {
-  if (volume.value > 0 && !muted.value) {
-    volBefore.value = volume.value
-    volume.value = 0
-    muted.value = true
-  } else {
-    muted.value = false
-    volume.value = volBefore.value > 0 ? volBefore.value : 0.7
-  }
-}
-
-let audio = null
-let audioCtx = null
-let analyser = null
-let source = null
-let rafId = null
-
-const bars = ref(Array.from({ length: 46 }, () => 3))
-
-function initAnalyser() {
-  if (!audio) return
-  try {
-    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)()
-    if (audioCtx.state === 'suspended') audioCtx.resume()
-    if (source) source.disconnect()
-    if (analyser) analyser.disconnect()
-    source = audioCtx.createMediaElementSource(audio)
-    analyser = audioCtx.createAnalyser()
-    analyser.fftSize = 128
-    source.connect(analyser)
-    analyser.connect(audioCtx.destination)
-    runLoop()
-  } catch (e) { analyser = null; source = null }
-}
-
-function runLoop() {
-  if (!analyser) return
-  const data = new Uint8Array(analyser.frequencyBinCount)
-  function tick() {
-    if (!analyser) return
-    analyser.getByteFrequencyData(data)
-    const v = []
-    for (let i = 0; i < 46; i++) v.push(Math.max(3, ((data[i] || 0) / 255) * 24))
-    bars.value = v
-    rafId = requestAnimationFrame(tick)
-  }
-  tick()
-}
-
-let onTimeupdate = null
-let onLoadedmetadata = null
-let onEnded = null
-
-function makeUrl(file) {
-  return `/music/${file}`
-}
-
-function cleanupAudio() {
-  if (rafId) { cancelAnimationFrame(rafId); rafId = null }
-  if (source) { source.disconnect(); source = null }
-  if (analyser) { analyser.disconnect(); analyser = null }
-  if (!audio) return
-  audio.pause()
-  audio.removeEventListener('timeupdate', onTimeupdate)
-  audio.removeEventListener('loadedmetadata', onLoadedmetadata)
-  audio.removeEventListener('ended', onEnded)
-  audio = null
-}
-
-function loadTrack() {
-  cleanupAudio()
-  const src = makeUrl(current.value.file)
-  audio = new Audio(src)
-  audio.volume = volume.value
-
-  onTimeupdate = () => { currentTime.value = audio.currentTime || 0; seek.value = currentTime.value }
-  onLoadedmetadata = () => { duration.value = audio.duration || 0 }
-  onEnded = onTrackEnd
-
-  audio.addEventListener('timeupdate', onTimeupdate)
-  audio.addEventListener('loadedmetadata', onLoadedmetadata)
-  audio.addEventListener('ended', onEnded)
-
-  if (playing.value) {
-    audio.play().catch(() => {})
-    if (!analyser) initAnalyser()
-  }
-}
-
-function onTrackEnd() {
-  if (loop.value) {
-    if (audio) { audio.currentTime = 0; audio.play().catch(() => {}) }
-  } else {
-    next()
-  }
-}
-
 function toggle() {
-  if (!audio) { loadTrack(); if (!audio) return }
-  if (playing.value) {
-    audio.pause()
-    playing.value = false
-    if (rafId) { cancelAnimationFrame(rafId); rafId = null }
-  } else {
-    if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume()
-    if (!analyser) initAnalyser()
-    audio.play().catch(() => {})
-    playing.value = true
-  }
-  emit('play-state', playing.value)
+  store.toggle()
+  emit('play-state', store.playing)
 }
 
-function next() { idx.value = (idx.value + 1) % props.tracks.length }
-function prev() { idx.value = (idx.value - 1 + props.tracks.length) % props.tracks.length }
-
-function onSeek() {
-  if (!audio) return
-  audio.currentTime = seek.value
-}
-
-watch(volume, (v) => { if (audio) audio.volume = v; if (v > 0) muted.value = false })
-
-function fmt(s) {
-  if (!s && s !== 0) return '00:00'
-  const m = Math.floor(s / 60)
-  const sec = Math.floor(s % 60)
-  return `${String(m).padStart(2, '0')}:${String(sec).padStart(2, '0')}`
-}
-
-watch(idx, () => { emit('play-state', playing.value); loadTrack() })
-
-onMounted(() => { loadTrack() })
-onUnmounted(() => { cleanupAudio() })
+// 首次打开面板时初始化音频
+onMounted(() => { if (!store.playing) store.loadTrack() })
 </script>
 
 <style scoped>

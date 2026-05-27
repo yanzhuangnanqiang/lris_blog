@@ -1,18 +1,17 @@
 <template>
   <div class="dock">
     <div class="disc-wrap">
-      <p class="disc-hint" v-if="!isPlaying && !currentMsg">听会歌放松一下吧</p>
+      <p class="disc-hint" v-if="!store.playing && !currentMsg">听会歌放松一下吧</p>
       <p class="disc-msg" v-if="msgKey" :key="msgKey">{{ currentMsg }}</p>
-      <button class="disc-btn" :class="{ spinning: isPlaying }" @click="onDiscClick">
+      <button class="disc-btn" :class="{ spinning: store.playing }" @click="onDiscClick">
         <img class="disc-img" :src="discImg" alt="" />
       </button>
     </div>
 
     <MusicPanel
       v-show="open"
-      :tracks="tracks"
       @close="open = false"
-      @play-state="isPlaying = $event"
+      @play-state="store.playing = $event"
     />
   </div>
 </template>
@@ -20,10 +19,11 @@
 <script setup>
 import { nextTick, ref } from 'vue'
 import MusicPanel from './MusicPanel.vue'
+import { useMusicStore } from '@/stores/music'
 import discImg from '@/assets/liushenji.png'
 
+const store = useMusicStore()
 const open = ref(false)
-const isPlaying = ref(false)
 const currentMsg = ref('')
 const msgKey = ref(0)
 
@@ -73,14 +73,6 @@ function onDiscClick() {
   if (msgTimer) clearTimeout(msgTimer)
   msgTimer = setTimeout(() => { currentMsg.value = '' }, 2200)
 }
-
-const tracks = [
-  { title: '赛琳娜 希声_缘纺祈糸', file: '赛琳娜 希声_缘纺祈糸.mp3', artist: '赛琳娜' },
-  { title: '流离叠奏', file: '流离叠奏.mp3', artist: '赛琳娜' },
-  { title: 'Dreaming to the Glowing Place', file: 'EP - Dreaming to the Glowing Place_.mp3', artist: '赛琳娜' },
-
-  { title: 'Dear You 致你', file: '赛琳娜·希声 《Dear You 致你》.mp3', artist: '赛琳娜' },
-]
 </script>
 
 <style scoped>
