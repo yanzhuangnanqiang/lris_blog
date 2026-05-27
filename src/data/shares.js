@@ -55,7 +55,7 @@ export const lifeJournal = [
     {
     date: '2026-05-26',
     items: [
-      { text: '什么东西啊，我都还没好好享受，我的显示屏就坏了，一圈一圈的坏点你们是怎么出来的啊！', photos: ['doroangry'], tag: '新生' },
+      { text: '什么东西啊，我都还没好好享受，我的显示屏就坏了，一圈一圈的坏点你们是怎么出来的啊！', photos: ['doroangry.gif'], tag: '悲剧' },
     ],
   },
 ].map(day => ({
