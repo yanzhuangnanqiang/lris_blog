@@ -209,6 +209,9 @@ onMounted(() => {
   scrollerEl = document.querySelector('.scroller')
   if (scrollerEl) {
     scrollerEl.addEventListener('scroll', onScroll, { passive: true })
+    // 从文章页返回时恢复滚动位置
+    const saved = sessionStorage.getItem('homeScroll')
+    if (saved) { scrollerEl.scrollTop = parseInt(saved, 10); sessionStorage.removeItem('homeScroll') }
   }
   onScroll()
   window.addEventListener('mousemove', onMove)
@@ -218,6 +221,7 @@ onMounted(() => {
 })
 onUnmounted(() => {
   if (scrollerEl) {
+    sessionStorage.setItem('homeScroll', scrollerEl.scrollTop)
     scrollerEl.removeEventListener('scroll', onScroll)
   }
   window.removeEventListener('mousemove', onMove)

@@ -74,7 +74,7 @@
               v-for="(note, idx) in filteredArchive"
               :key="note.id"
               class="av-card"
-              :style="{ backgroundImage: `url(${noteImg(idx)})` }"
+              :style="{ backgroundImage: `url(${noteImgForId(note.id)})` }"
               @click="selectedId = note.id"
             >
               <div class="avc-main">
@@ -118,6 +118,11 @@ import { notes, renderNote } from '@/data/loadNotes'
 
 const projectImgs = Object.values(import.meta.glob('@/assets/saiset/project/*.{jpg,jpeg,png,JPG,JPEG,PNG}', { eager: true, import: 'default' }))
 function noteImg(idx) { return projectImgs[idx % projectImgs.length] }
+function noteImgForId(id) {
+  let hash = 0
+  for (let i = 0; i < id.length; i++) { hash = ((hash << 5) - hash) + id.charCodeAt(i); hash |= 0 }
+  return projectImgs[Math.abs(hash) % projectImgs.length]
+}
 
 const theme = useAppStore()
 const selectedId = ref(null)
