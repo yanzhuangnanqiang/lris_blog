@@ -667,6 +667,12 @@ onUnmounted(() => {
   transform: scale(1.008);
 }
 
+.post-card:active {
+  transform: scale(0.985);
+  opacity: 0.8;
+  transition: 0.1s ease;
+}
+
 .post-left {
   flex-shrink: 0;
   width: 160px;
