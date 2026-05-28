@@ -37,6 +37,7 @@
               </div>
             </div>
             <div class="rp-body" v-html="renderedHtml"></div>
+            <button v-if="showTopBtn" class="back-top" @click="scrollToTop" title="回到顶部">↑</button>
           </article>
           <TableOfContents v-if="tocHeadings.length" :headings="tocHeadings" />
         </div>
@@ -56,6 +57,7 @@
               </div>
             </div>
             <div class="rp-body" v-html="renderedHtml"></div>
+            <button v-if="showTopBtn" class="back-top" @click="scrollToTop" title="回到顶部">↑</button>
           </article>
           <TableOfContents v-if="tocHeadings.length" :headings="tocHeadings" />
         </div>
@@ -117,7 +119,6 @@
       </div>
     </main>
 
-    <button v-if="showTopBtn" class="back-top" @click="scrollToTop" title="回到顶部">↑</button>
   </div>
 </template>
 
@@ -136,7 +137,6 @@ import closeIcon from '@/assets/panel-right-close.svg'
 
 const notesImgModules = import.meta.glob('@/assets/saiset/notes/*.{jpg,jpeg,png,gif,JPG,JPEG,PNG,webp}', { eager: true, import: 'default' })
 const notesImgs = Object.values(notesImgModules)
-function noteImg(idx) { return notesImgs[idx % notesImgs.length] || '' }
 function noteImgForId(id) {
   let hash = 0
   for (let i = 0; i < id.length; i++) { hash = ((hash << 5) - hash) + id.charCodeAt(i); hash |= 0 }
@@ -167,7 +167,7 @@ watch(selectedId, async (id) => {
 
 const coverImg = computed(() => {
   if (!selectedNote.value) return null
-  return resolveCover(selectedNote.value) || noteImg(notes.findIndex(n => n.id === selectedNote.value.id))
+  return resolveCover(selectedNote.value) || noteImgForId(selectedNote.value.id)
 })
 const tocHeadings = computed(() => {
   if (!renderedHtml.value) return []
@@ -487,26 +487,21 @@ const filteredArchive = computed(() => {
 }
 .sidebar-fab:hover::after { opacity: 1; }
 .back-top {
-  position: fixed;
-  right: 24px;
-  bottom: 80px;
-  z-index: 60;
-  width: 38px;
-  height: 38px;
+  display: block;
+  margin: 32px 0 0 auto;
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
-  border: 1px solid rgba(255,255,255,0.1);
-  background: rgba(30,42,50,0.5);
+  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(30,42,50,0.55);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
   color: rgba(255,255,255,0.5);
-  font-size: 1.1rem;
+  font-size: 1rem;
   cursor: pointer;
   transition: 0.2s;
-  display: flex;
-  align-items: center;
-  justify-content: center;
 }
-.back-top:hover { color: #fff; background: rgba(30,42,50,0.7); transform: translateY(-2px); }
+.back-top:hover { color: #fff; background: rgba(30,42,50,0.75); }
 
 @keyframes fabHint {
   0%, 100% { opacity: 0.3; }
