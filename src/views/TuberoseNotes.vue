@@ -401,8 +401,8 @@ const filteredArchive = computed(() => {
   top: 10%;
   transform: translateY(-50%);
   z-index: 80;
-  width: 32px;
-  height: 52px;
+  width: 44px;
+  height: 64px;
   background: transparent;
   border: none;
   color: rgba(255, 255, 255, 0.4);
