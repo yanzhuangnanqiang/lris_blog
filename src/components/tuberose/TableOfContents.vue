@@ -1,5 +1,5 @@
 <template>
-  <aside class="toc-wrapper" :class="{ open: mobileOpen }" @touchstart="onTouchStart" @touchend="onTouchEnd">
+  <aside class="toc-wrapper" :class="{ open: mobileOpen }">
     <div v-if="mobileOpen" class="toc-backdrop" @click="close"></div>
     <nav class="toc-panel">
       <ul v-if="headings.length" class="toc-list">
@@ -91,14 +91,6 @@ function onClick(id) {
 
 function close() { mobileOpen.value = false }
 function open() { mobileOpen.value = true }
-
-let touchStartX = 0
-function onTouchStart(e) { touchStartX = e.touches[0].clientX }
-function onTouchEnd(e) {
-  const dx = e.changedTouches[0].clientX - touchStartX
-  if (dx < -50) open()
-  else if (dx > 50) close()
-}
 
 defineExpose({ open, close })
 </script>

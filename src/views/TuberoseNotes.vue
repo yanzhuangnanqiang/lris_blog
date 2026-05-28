@@ -21,6 +21,8 @@
     <Sidebar :selected-id="selectedId" @select="id => selectedId = id" />
 
     <main ref="mainRef" class="main-content" :class="{ expanded: theme.isSidebarCollapsed }" @scroll="onScroll" @click="onContentClick">
+
+    <button v-if="tocHeadings.length" class="toc-mobile-btn" :class="{ hidden: hideTocBtn }" @click.stop="tocRef?.open()"><img :src="listIcon" alt="目录" /></button>
       <!-- ===== 最新 ===== -->
       <template v-if="theme.currentNav === 'latest'">
         <WelcomePanel v-if="!selectedNote" @random="randomNote" />
@@ -39,7 +41,7 @@
             <div class="rp-body" v-html="renderedHtml"></div>
             <button v-if="showTopBtn" class="back-top" @click="scrollToTop" title="回到顶部">↑</button>
           </article>
-          <TableOfContents v-if="tocHeadings.length" :headings="tocHeadings" />
+          <TableOfContents v-if="tocHeadings.length" ref="tocRef" :headings="tocHeadings" />
         </div>
       </template>
 
@@ -59,7 +61,7 @@
             <div class="rp-body" v-html="renderedHtml"></div>
             <button v-if="showTopBtn" class="back-top" @click="scrollToTop" title="回到顶部">↑</button>
           </article>
-          <TableOfContents v-if="tocHeadings.length" :headings="tocHeadings" />
+          <TableOfContents v-if="tocHeadings.length" ref="tocRef" :headings="tocHeadings" />
         </div>
 
         <div v-else class="archive-view">
@@ -134,6 +136,7 @@ import { notes, renderNote } from '@/data/loadNotes'
 import TableOfContents from '@/components/tuberose/TableOfContents.vue'
 import openIcon from '@/assets/panel-right-open.svg'
 import closeIcon from '@/assets/panel-right-close.svg'
+import listIcon from '@/assets/list.svg'
 
 const notesImgModules = import.meta.glob('@/assets/saiset/notes/*.{jpg,jpeg,png,gif,JPG,JPEG,PNG,webp}', { eager: true, import: 'default' })
 const notesImgs = Object.values(notesImgModules)
@@ -185,14 +188,23 @@ const tocHeadings = computed(() => {
   return items
 })
 const mainRef = ref(null)
+const tocRef = ref(null)
 const showTopBtn = ref(false)
+const hideTocBtn = ref(false)
+let lastScrollY = 0
 function randomNote() {
   if (notes.length) selectedId.value = notes[0].id
 }
 function onContentClick() {
   if (!theme.isSidebarCollapsed) theme.toggleSidebar()
+  tocRef.value?.close()
 }
-function onScroll() { showTopBtn.value = (mainRef.value?.scrollTop || 0) > 300 }
+function onScroll() {
+  const top = mainRef.value?.scrollTop || 0
+  showTopBtn.value = top > 300
+  hideTocBtn.value = top > lastScrollY && top > 100
+  lastScrollY = top
+}
 function scrollToTop() { mainRef.value?.scrollTo({ top: 0, behavior: 'smooth' }) }
 
 // 归档状态
@@ -508,7 +520,34 @@ const filteredArchive = computed(() => {
   50% { opacity: 0.65; }
 }
 
+.toc-mobile-btn {
+  display: none;
+}
 @media (max-width: 780px) {
+  .toc-mobile-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: fixed;
+    right: 0;
+    top: 80px;
+    z-index: 90;
+    width: 32px;
+    height: 48px;
+    border-radius: 8px 0 0 8px;
+    border: 1px solid rgba(255,255,255,0.1);
+    border-right: none;
+    background: rgba(30,42,50,0.28);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    color: rgba(255,255,255,0.45);
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: transform 0.3s ease, opacity 0.3s ease;
+  }
+  .toc-mobile-btn:active { color: #fff; background: rgba(30,42,50,0.5); }
+  .toc-mobile-btn img { width: 16px; height: 16px; opacity: 0.85; }
+  .toc-mobile-btn.hidden { transform: translateX(100%); opacity: 0; pointer-events: none; }
   .reader-wrapper { display: block; max-width: none; width: auto; margin: 0 0 60px; }
   .reader-panel { padding: 28px 20px; width: calc(100% - 24px); margin: 0 auto 60px; max-width: 1000px; margin-left: auto; margin-right: auto; }
   .rp-cover { height: 180px; }
