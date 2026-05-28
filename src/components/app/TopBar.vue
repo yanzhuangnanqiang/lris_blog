@@ -9,7 +9,7 @@
 <template>
   <header
     class="topbar"
-    :class="{ active: isHover || menuOpen, 'sidebar-open': !theme.isSidebarCollapsed }"
+    :class="{ active: isHover || menuOpen, 'sidebar-open': !theme.isSidebarCollapsed && route.path === '/notes' }"
     @mouseenter="isHover = true"
     @mouseleave="isHover = false"
   >
