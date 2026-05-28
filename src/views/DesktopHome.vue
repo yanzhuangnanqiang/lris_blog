@@ -94,7 +94,7 @@
 </template>
 
 <script setup>
-import { computed, nextTick, onMounted, onUnmounted, ref } from 'vue'
+import { computed, nextTick, onActivated, onDeactivated, onMounted, onUnmounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import TopBar from '@/components/app/TopBar.vue'
 import MusicDock from '@/components/Player/MusicDock.vue'
@@ -218,6 +218,16 @@ onMounted(() => {
   window.addEventListener('mouseup', onDragEnd)
   window.addEventListener('touchmove', onMove, { passive: false })
   window.addEventListener('touchend', onDragEnd)
+})
+onActivated(() => {
+  const saved = sessionStorage.getItem('homeScroll')
+  if (saved) { scrollerEl.scrollTop = parseInt(saved, 10); sessionStorage.removeItem('homeScroll') }
+  onScroll()
+})
+onDeactivated(() => {
+  if (scrollerEl) {
+    sessionStorage.setItem('homeScroll', scrollerEl.scrollTop)
+  }
 })
 onUnmounted(() => {
   if (scrollerEl) {
