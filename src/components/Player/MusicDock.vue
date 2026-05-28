@@ -17,7 +17,7 @@
 </template>
 
 <script setup>
-import { nextTick, ref } from 'vue'
+import { ref } from 'vue'
 import MusicPanel from './MusicPanel.vue'
 import { useMusicStore } from '@/stores/music'
 import discImg from '@/assets/liushenji.png'
@@ -65,10 +65,7 @@ function onDiscClick() {
   msgKey.value++
   if (!open.value) {
     open.value = true
-    nextTick(() => {
-      const btn = document.querySelector('.panel .play')
-      if (btn) btn.click()
-    })
+    if (!store.playing) store.toggle()
   }
   if (msgTimer) clearTimeout(msgTimer)
   msgTimer = setTimeout(() => { currentMsg.value = '' }, 2200)

@@ -69,7 +69,7 @@
               :key="post.id"
               class="post-card"
               :style="{ animationDelay: `${0.1 + i * 0.12}s` }"
-              @click="router.push(`/post/${post.id}`)"
+              @click="goToPost(post.id)"
             >
               <div class="post-left">
                 <img :src="post.photoSrc" :alt="post.title" loading="lazy" decoding="async" />
@@ -94,8 +94,8 @@
 </template>
 
 <script setup>
-import { computed, nextTick, onActivated, onDeactivated, onMounted, onUnmounted, ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
+import { useRouter, onBeforeRouteLeave } from 'vue-router'
 import TopBar from '@/components/app/TopBar.vue'
 import MusicDock from '@/components/Player/MusicDock.vue'
 import IconLink from '@/components/app/IconLink.vue'
@@ -144,6 +144,26 @@ const filteredPosts = computed(() => {
   return posts.filter(p => p.category === activeCat.value)
 })
 
+function saveScroll() {
+  if (scrollerEl) sessionStorage.setItem('homeScroll', String(scrollerEl.scrollTop))
+}
+function restoreScroll() {
+  const saved = sessionStorage.getItem('homeScroll')
+  if (!saved || !scrollerEl) return
+  nextTick(() => {
+    requestAnimationFrame(() => {
+      setTimeout(() => {
+        scrollerEl.scrollTop = parseInt(saved, 10)
+        sessionStorage.removeItem('homeScroll')
+        onScroll()
+      }, 80)
+    })
+  })
+}
+function goToPost(id) {
+  saveScroll()
+  router.push(`/post/${id}`)
+}
 function scrollToPosts() {
   postsRef.value?.scrollIntoView({ behavior: 'smooth' })
 }
@@ -209,9 +229,7 @@ onMounted(() => {
   scrollerEl = document.querySelector('.scroller')
   if (scrollerEl) {
     scrollerEl.addEventListener('scroll', onScroll, { passive: true })
-    // 从文章页返回时恢复滚动位置
-    const saved = sessionStorage.getItem('homeScroll')
-    if (saved) { scrollerEl.scrollTop = parseInt(saved, 10); sessionStorage.removeItem('homeScroll') }
+    restoreScroll()
   }
   onScroll()
   window.addEventListener('mousemove', onMove)
@@ -219,19 +237,13 @@ onMounted(() => {
   window.addEventListener('touchmove', onMove, { passive: false })
   window.addEventListener('touchend', onDragEnd)
 })
-onActivated(() => {
-  const saved = sessionStorage.getItem('homeScroll')
-  if (saved) { scrollerEl.scrollTop = parseInt(saved, 10); sessionStorage.removeItem('homeScroll') }
-  onScroll()
+
+onBeforeRouteLeave(() => {
+  saveScroll()
 })
-onDeactivated(() => {
+
+onBeforeUnmount(() => {
   if (scrollerEl) {
-    sessionStorage.setItem('homeScroll', scrollerEl.scrollTop)
-  }
-})
-onUnmounted(() => {
-  if (scrollerEl) {
-    sessionStorage.setItem('homeScroll', scrollerEl.scrollTop)
     scrollerEl.removeEventListener('scroll', onScroll)
   }
   window.removeEventListener('mousemove', onMove)
@@ -355,6 +367,7 @@ onUnmounted(() => {
   z-index: 3;
   text-align: center;
   transition: opacity 0.6s ease, transform 0.6s ease;
+  margin-top: 100px;
 }
 
 .hero-content.fading {

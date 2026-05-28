@@ -39,15 +39,15 @@ export const useMusicStore = defineStore('music', () => {
   function initAnalyser() {
     if (!audio) return
     try {
-      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)()
+      if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)()
+        source = audioCtx.createMediaElementSource(audio)
+        analyser = audioCtx.createAnalyser()
+        analyser.fftSize = 128
+        source.connect(analyser)
+        analyser.connect(audioCtx.destination)
+      }
       if (audioCtx.state === 'suspended') audioCtx.resume()
-      if (source) source.disconnect()
-      if (analyser) analyser.disconnect()
-      source = audioCtx.createMediaElementSource(audio)
-      analyser = audioCtx.createAnalyser()
-      analyser.fftSize = 128
-      source.connect(analyser)
-      analyser.connect(audioCtx.destination)
       runLoop()
     } catch (e) { analyser = null; source = null }
   }
@@ -68,8 +68,6 @@ export const useMusicStore = defineStore('music', () => {
 
   function stopVisualizer() {
     if (rafId) { cancelAnimationFrame(rafId); rafId = null }
-    if (source) { source.disconnect(); source = null }
-    if (analyser) { analyser.disconnect(); analyser = null }
   }
 
   function onTrackEnd() {
@@ -101,7 +99,7 @@ export const useMusicStore = defineStore('music', () => {
   }
 
   function toggle() {
-    if (!audio) { loadTrack(); return }
+    if (!audio) loadTrack()
     if (playing.value) {
       audio.pause()
       playing.value = false
@@ -147,8 +145,8 @@ export const useMusicStore = defineStore('music', () => {
   watch(volume, (v) => { if (audio) audio.volume = v; if (v > 0) muted.value = false })
 
   return {
-    idx, playing, currentTime, duration, seek, volume, muted, loop,
-    current, bars,
+    idx, playing, currentTime, duration, seek, volume, muted, volBefore, loop,
+    current, bars, tracks,
     toggle, next, prev, onSeek, toggleMute, fmt, loadTrack, initAnalyser,
   }
 })
