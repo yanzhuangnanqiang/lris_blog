@@ -1,53 +1,64 @@
+<!--
+ * @Author       : Hidden Goose yanzhuangqiang@email.ncu.edu.cn
+ * @Date         : 2026-05-28 11:17:34
+ * @LastEditors  : Hidden Goose yanzhuangqiang@email.ncu.edu.cn
+ * @LastEditTime : 2026-05-28 11:18:04
+ * @FilePath     : /myweb-Hiddengoose/src/views/TuberoseNotes.vue
+ * @Description  : 如果你喜欢的话， 请你一定要保持好的心情继续喜欢下去😘🥰
+-->
 <template>
   <div class="notes-layout">
-    <TopBar />
+    <TopBar>
+      <template #left-extra>
+        <button class="sidebar-toggle" @click="theme.toggleSidebar" :title="theme.isSidebarCollapsed ? '展开侧边栏' : '收起侧边栏'">
+          <img :src="theme.isSidebarCollapsed ? openIcon : closeIcon" alt="" />
+        </button>
+      </template>
+    </TopBar>
 
     <BackgroundWallpaper image-src="yeguang.jpg" />
 
     <Sidebar :selected-id="selectedId" @select="id => selectedId = id" />
 
-    <button
-      v-if="theme.isSidebarCollapsed"
-      class="sidebar-fab"
-      @click="theme.toggleSidebar"
-      title="展开侧边栏"
-    >
-      <img src="@/assets/panel-right-open.svg" alt="展开" />
-    </button>
-
-    <main ref="mainRef" class="main-content" :class="{ expanded: theme.isSidebarCollapsed }" @scroll="onScroll">
+    <main ref="mainRef" class="main-content" :class="{ expanded: theme.isSidebarCollapsed }" @scroll="onScroll" @click="onContentClick">
       <!-- ===== 最新 ===== -->
       <template v-if="theme.currentNav === 'latest'">
-        <WelcomePanel v-if="!selectedNote" />
+        <WelcomePanel v-if="!selectedNote" @random="randomNote" />
         <PetalEffect v-if="theme.isPetalEnabled && !selectedNote" />
-        <article v-if="selectedNote" class="reader-panel">
-          <button class="rp-back" @click="selectedId = null">← 返回</button>
-          <div v-if="coverImg" class="rp-cover" :style="{ backgroundImage: `url(${coverImg})` }"></div>
-          <div class="rp-header">
-            <h1>{{ selectedNote.title }}</h1>
-            <div class="rp-meta">
-              <span>{{ selectedNote.date }}</span>
-              <span v-for="t in selectedNote.tags" :key="t" class="rp-tag"># {{ t }}</span>
+        <div v-if="selectedNote" class="reader-wrapper">
+          <article class="reader-panel">
+            <button class="rp-back" @click="selectedId = null">← 返回</button>
+            <div v-if="coverImg" class="rp-cover" :style="{ backgroundImage: `url(${coverImg})` }"></div>
+            <div class="rp-header">
+              <h1>{{ selectedNote.title }}</h1>
+              <div class="rp-meta">
+                <span>{{ selectedNote.date }}</span>
+                <span v-for="t in selectedNote.tags" :key="t" class="rp-tag"># {{ t }}</span>
+              </div>
             </div>
-          </div>
-          <div class="rp-body" v-html="renderedHtml"></div>
-        </article>
+            <div class="rp-body" v-html="renderedHtml"></div>
+          </article>
+          <TableOfContents v-if="tocHeadings.length" :headings="tocHeadings" />
+        </div>
       </template>
 
       <!-- ===== 归档 ===== -->
       <template v-else-if="theme.currentNav === 'archive'">
-        <article v-if="selectedNote" class="reader-panel">
-          <button class="rp-back" @click="selectedId = null">← 返回列表</button>
-          <div v-if="coverImg" class="rp-cover" :style="{ backgroundImage: `url(${coverImg})` }"></div>
-          <div class="rp-header">
-            <h1>{{ selectedNote.title }}</h1>
-            <div class="rp-meta">
-              <span>{{ selectedNote.date }}</span>
-              <span v-for="t in selectedNote.tags" :key="t" class="rp-tag"># {{ t }}</span>
+        <div v-if="selectedNote" class="reader-wrapper">
+          <article class="reader-panel">
+            <button class="rp-back" @click="selectedId = null">← 返回列表</button>
+            <div v-if="coverImg" class="rp-cover" :style="{ backgroundImage: `url(${coverImg})` }"></div>
+            <div class="rp-header">
+              <h1>{{ selectedNote.title }}</h1>
+              <div class="rp-meta">
+                <span>{{ selectedNote.date }}</span>
+                <span v-for="t in selectedNote.tags" :key="t" class="rp-tag"># {{ t }}</span>
+              </div>
             </div>
-          </div>
-          <div class="rp-body" v-html="renderedHtml"></div>
-        </article>
+            <div class="rp-body" v-html="renderedHtml"></div>
+          </article>
+          <TableOfContents v-if="tocHeadings.length" :headings="tocHeadings" />
+        </div>
 
         <div v-else class="archive-view">
           <div class="av-search">
@@ -96,8 +107,12 @@
         <div class="lab-card">
           <span class="lab-icon">🧪</span>
           <h2>实验室</h2>
-          <p>还在设计中，敬请期待</p>
-          <p class="lab-hint">这里将用于代码演示、可视化与交互实验</p>
+          <p class="lab-sub">正在调配试剂，不久将开启。</p>
+          <div class="lab-bar-wrap">
+            <span class="lab-bar-label">构建进度</span>
+            <div class="lab-bar"><span class="lab-bar-fill"></span></div>
+          </div>
+          <p class="lab-hint">交互式 Demo · 代码片段 · 可视化实验 · 更多好玩的东西在路上</p>
         </div>
       </div>
     </main>
@@ -115,6 +130,9 @@ import WelcomePanel from '@/components/tuberose/WelcomePanel.vue'
 import PetalEffect from '@/components/tuberose/PetalEffect.vue'
 import { useAppStore } from '@/stores/theme'
 import { notes, renderNote } from '@/data/loadNotes'
+import TableOfContents from '@/components/tuberose/TableOfContents.vue'
+import openIcon from '@/assets/panel-right-open.svg'
+import closeIcon from '@/assets/panel-right-close.svg'
 
 const notesImgModules = import.meta.glob('@/assets/saiset/notes/*.{jpg,jpeg,png,gif,JPG,JPEG,PNG,webp}', { eager: true, import: 'default' })
 const notesImgs = Object.values(notesImgModules)
@@ -151,8 +169,29 @@ const coverImg = computed(() => {
   if (!selectedNote.value) return null
   return resolveCover(selectedNote.value) || noteImg(notes.findIndex(n => n.id === selectedNote.value.id))
 })
+const tocHeadings = computed(() => {
+  if (!renderedHtml.value) return []
+  const doc = new DOMParser().parseFromString(renderedHtml.value, 'text/html')
+  const items = []
+  doc.querySelectorAll('h2, h3').forEach(h => {
+    const text = h.textContent.trim()
+    if (!text) return
+    let id = h.id
+    if (!id) {
+      id = text.replace(/\s+/g, '-').toLowerCase()
+    }
+    items.push({ level: +h.tagName[1], id, text })
+  })
+  return items
+})
 const mainRef = ref(null)
 const showTopBtn = ref(false)
+function randomNote() {
+  if (notes.length) selectedId.value = notes[0].id
+}
+function onContentClick() {
+  if (!theme.isSidebarCollapsed) theme.toggleSidebar()
+}
 function onScroll() { showTopBtn.value = (mainRef.value?.scrollTop || 0) > 300 }
 function scrollToTop() { mainRef.value?.scrollTo({ top: 0, behavior: 'smooth' }) }
 
@@ -197,11 +236,19 @@ const filteredArchive = computed(() => {
 }
 .main-content::-webkit-scrollbar { display: none; }
 
+/* ===== 阅读器 + 目录容器 ===== */
+.reader-wrapper {
+  display: flex;
+  align-items: flex-start;
+  width: 100%;
+  margin: 0 0 60px;
+}
 /* ===== 阅读面板 ===== */
 .reader-panel {
-  max-width: 1000px;
-  width: calc(100% - 48px);
-  margin: 0 auto 60px;
+  margin-left: 10%;
+  margin-right: 10px;
+  flex: 1;
+  min-width: 0;
   padding: 40px 56px;
   background: rgba(30, 42, 50, 0.5);
   backdrop-filter: blur(20px);
@@ -388,36 +435,42 @@ const filteredArchive = computed(() => {
 .lab-card {
   text-align: center;
   color: rgba(255,255,255,0.5);
+  max-width: 360px;
 }
 .lab-icon { font-size: 3rem; display: block; margin-bottom: 16px; }
 .lab-card h2 { font-size: 1.4rem; font-weight: 400; color: rgba(255,255,255,0.6); letter-spacing: 3px; margin: 0 0 8px; }
-.lab-card p { font-size: 0.9rem; margin: 0 0 4px; }
-.lab-hint { color: rgba(255,255,255,0.25); font-size: 0.8rem !important; letter-spacing: 1px; }
+.lab-sub { font-size: 0.9rem; color: rgba(255,255,255,0.45); margin: 0 0 20px; }
+.lab-bar-wrap { display: flex; align-items: center; gap: 10px; justify-content: center; margin-bottom: 16px; }
+.lab-bar-label { font-size: 0.7rem; color: rgba(255,255,255,0.3); white-space: nowrap; }
+.lab-bar { width: 160px; height: 4px; border-radius: 2px; background: rgba(255,255,255,0.08); overflow: hidden; }
+.lab-bar-fill { display: block; width: 35%; height: 100%; border-radius: 2px; background: linear-gradient(90deg, rgba(160,140,200,0.6), rgba(140,180,210,0.6)); animation: labBarPulse 2.5s ease-in-out infinite; }
+@keyframes labBarPulse {
+  0%, 100% { width: 28%; }
+  50% { width: 42%; }
+}
+.lab-hint { color: rgba(255,255,255,0.2); font-size: 0.78rem !important; letter-spacing: 1px; line-height: 1.6; }
 
 /* ===== 侧边栏浮动按钮 ===== */
-.sidebar-fab {
-  position: fixed;
-  left: 12px;
-  top: 10px;
-  z-index: 80;
-  width: 44px;
-  height: 44px;
+.sidebar-toggle {
+  width: 36px;
+  height: 36px;
   background: transparent;
   border: none;
-  color: rgba(255, 255, 255, 0.4);
-  transition: all 0.3s ease;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  animation: fabHint 2.5s ease-in-out infinite;
+  margin-right: 4px;
+  border-radius: 6px;
+  transition: background 0.2s;
+  flex-shrink: 0;
 }
-.sidebar-fab img { width: 18px; height: 18px; opacity: 0.7; }
+.sidebar-toggle img { width: 18px; height: 18px; opacity: 0.4; }
 
-.sidebar-fab:hover {
-  color: rgba(255, 255, 255, 0.7);
-  animation: none;
+.sidebar-toggle:hover {
+  background: rgba(0,0,0,0.05);
 }
+.sidebar-toggle:hover img { opacity: 0.7; }
 .sidebar-fab::after {
   content: '展开侧边栏';
   position: absolute;
@@ -461,7 +514,8 @@ const filteredArchive = computed(() => {
 }
 
 @media (max-width: 780px) {
-  .reader-panel { padding: 28px 20px; width: calc(100% - 24px); }
+  .reader-wrapper { display: block; max-width: none; width: auto; margin: 0 0 60px; }
+  .reader-panel { padding: 28px 20px; width: calc(100% - 24px); margin: 0 auto 60px; max-width: 1000px; margin-left: auto; margin-right: auto; }
   .rp-cover { height: 180px; }
   .rp-header h1 { font-size: 1.4rem; }
   .archive-view { width: calc(100% - 24px); }

@@ -12,8 +12,13 @@
     <h1 class="main-title">技术笔记</h1>
     <p class="sub-title">记录踩过的坑与闪过的光</p>
     <p class="desc">前端、算法、工程化… 把碎片化的理解整理成可复用的知识。</p>
+    <button class="random-btn" @click="$emit('random')">最新一篇 →</button>
   </div>
 </template>
+
+<script setup>
+defineEmits(['random'])
+</script>
 
 <style scoped>
 .welcome {
@@ -49,5 +54,23 @@
   opacity: 0.7;
   max-width: 400px;
   line-height: 1.6;
+}
+.random-btn {
+  margin-top: 24px;
+  padding: 10px 28px;
+  border-radius: 20px;
+  border: 1px solid rgba(255,255,255,0.3);
+  background: rgba(255,255,255,0.08);
+  color: rgba(255,255,255,0.7);
+  font-size: 0.9rem;
+  cursor: pointer;
+  letter-spacing: 2px;
+  transition: all 0.25s;
+}
+.random-btn:hover {
+  background: rgba(255,255,255,0.16);
+  border-color: rgba(255,255,255,0.5);
+  color: #fff;
+  transform: translateY(-1px);
 }
 </style>

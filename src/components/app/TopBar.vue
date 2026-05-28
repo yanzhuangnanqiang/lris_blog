@@ -9,11 +9,12 @@
 <template>
   <header
     class="topbar"
-    :class="{ active: isHover || menuOpen }"
+    :class="{ active: isHover || menuOpen, 'sidebar-open': !theme.isSidebarCollapsed }"
     @mouseenter="isHover = true"
     @mouseleave="isHover = false"
   >
     <div class="left">
+      <slot name="left-extra" />
       <div class="brand" @click="go('/')">
         <span class="brand-title">林间初见</span>
         <span class="brand-sub">Iris / Tuberose</span>
@@ -48,9 +49,11 @@
 <script setup>
 import { ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { useAppStore } from '@/stores/theme'
 import AvatarChip from './AvatarChip.vue'
 
 const router = useRouter()
+const theme = useAppStore()
 const route = useRoute()
 
 const isHover = ref(false)
@@ -92,10 +95,23 @@ function isOn(path) {
     background 220ms ease,
     border-color 220ms ease,
     box-shadow 220ms ease,
-    backdrop-filter 220ms ease;
+    backdrop-filter 220ms ease,
+    left 0.3s ease;
 
   /* 提升可读性：即使透明也让文字不至于太糊 */
   -webkit-font-smoothing: antialiased;
+
+  /* 侧边栏展开时 TopBar 右移 */
+  left: 0;
+}
+.topbar.sidebar-open {
+  left: 25%;
+}
+@media (max-width: 1200px) {
+  .topbar.sidebar-open { left: 300px; }
+}
+@media (max-width: 860px) {
+  .topbar.sidebar-open { left: 260px; }
 }
 
 .topbar.active {

@@ -27,11 +27,14 @@ defineEmits(['select'])
   cursor: pointer;
 }
 .note-card:hover {
-  background: rgba(220, 230, 240, 0.2);
+  background: rgba(220, 230, 240, 0.15);
+  border-color: rgba(255,255,255,0.2);
+  transform: translateX(2px);
 }
 .note-card.active {
   background: rgba(111,66,193,0.25);
   border-color: rgba(111,66,193,0.4);
+  border-left: 3px solid var(--iris-purple);
 }
 .note-title {
   font-size: 0.95rem;
@@ -40,8 +43,8 @@ defineEmits(['select'])
   margin-bottom: 6px;
 }
 .note-meta {
-  font-size: 0.7rem;
-  color: #9eabb5;
+  font-size: 0.72rem;
+  color: rgba(255,255,255,0.4);
   margin-bottom: 6px;
 }
 .note-tags { display: flex; flex-wrap: wrap; gap: 4px; }

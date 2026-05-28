@@ -7,16 +7,17 @@
  * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
 -->
 <template>
-  <aside class="sidebar" :class="theme.isSidebarCollapsed ? 'panel-right-close' : 'panel-right-open'">
+  <aside class="sidebar" :class="theme.isSidebarCollapsed ? 'panel-right-close' : 'panel-right-open'" @touchstart="onSwipeStart" @touchmove="onSwipeMove" @touchend="onSwipeEnd">
     <div class="sidebar-inner">
       <div class="top-row">
         <button class="collapse-btn" @click="theme.toggleSidebar" title="收起侧边栏">
-          <img src="@/assets/panel-right-close.svg" alt="收起" />
+          <img src="@/assets/chevron-left.svg" alt="收起" />
         </button>
       </div>
       <SidebarHeader />
       <SidebarNav />
-      <SidebarFilters />
+      <p class="list-hint">浏览全部笔记（{{ notes.length }} 篇）</p>
+      <SidebarIntro v-if="theme.currentNav !== 'latest'" :tab="theme.currentNav" />
       <SidebarNoteList :selected-id="selectedId" @select="id => $emit('select', id)" />
       <SidebarFooter />
     </div>
@@ -25,28 +26,37 @@
 
 <script setup>
 import { useAppStore } from '@/stores/theme'
+import { notes } from '@/data/loadNotes'
 import SidebarHeader from './SidebarHeader.vue'
 import SidebarNav from './SidebarNav.vue'
-import SidebarFilters from './SidebarFilters.vue'
 import SidebarNoteList from './SidebarNoteList.vue'
 import SidebarFooter from './SidebarFooter.vue'
+import SidebarIntro from './SidebarIntro.vue'
 
 defineProps({ selectedId: { type: String, default: null } })
 defineEmits(['select'])
 const theme = useAppStore()
+
+let swipeX = 0
+function onSwipeStart(e) { swipeX = e.touches[0].clientX }
+function onSwipeMove() { /* tracked in start/end only */ }
+function onSwipeEnd(e) {
+  const dx = e.changedTouches[0].clientX - swipeX
+  if (dx < -60 && !theme.isSidebarCollapsed) theme.toggleSidebar()
+}
 </script>
 
 <style scoped>
 .sidebar {
   position: fixed;          /* 必须固定，否则 transform 失效 */
   left: 0;
-  top: 54px;
+  top: 0;
   z-index: 10;
 
   width: 25%;
   min-width: 280px;
   max-width: 520px;
-  height: calc(100% - 54px);
+  height: 100%;
   background: rgba(30, 42, 50, 0.5);
   backdrop-filter: blur(20px);
   border-right: 1px solid var(--glass-border);
@@ -71,7 +81,7 @@ const theme = useAppStore()
 }
 
 .sidebar-inner {
-  padding: 20px 16px;
+  padding: 14px 16px 20px;
   overflow-y: auto;
   height: 100%;
   display: flex;
@@ -98,6 +108,16 @@ const theme = useAppStore()
 }
 .collapse-btn:hover { opacity: 0.7; animation: none; }
 .collapse-btn img { width: 18px; height: 18px; }
+
+.list-hint {
+  font-size: 0.7rem;
+  color: rgba(255,255,255,0.22);
+  letter-spacing: 2px;
+  margin: 0 0 12px;
+  text-align: center;
+}
+
+
 .collapse-btn::after {
   content: '收起侧边栏';
   position: absolute;
