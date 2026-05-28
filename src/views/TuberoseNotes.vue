@@ -398,11 +398,10 @@ const filteredArchive = computed(() => {
 .sidebar-fab {
   position: fixed;
   left: 12px;
-  top: 10%;
-  transform: translateY(-50%);
+  top: 10px;
   z-index: 80;
   width: 44px;
-  height: 64px;
+  height: 44px;
   background: transparent;
   border: none;
   color: rgba(255, 255, 255, 0.4);
