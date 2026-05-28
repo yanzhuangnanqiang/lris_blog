@@ -121,10 +121,10 @@ function toggleLang(lang) {
 }
 
 const displayNames = {
-  'yanzhuangnanqiang': '土壤档案',
-  'yanzhuangnanqiang.github.io': '林间初见',
-  'My-nest': '巢',
-  'My-note': '拾穗',
+  'yanzhuangnanqiang': 'github主页',
+  'yanzhuangnanqiang.github.io': '个人主页',
+  'My-note': '我的笔记',
+  'lris_blog': '个人博客',
 }
 function displayName(repo) { return displayNames[repo.name] || repo.name }
 
