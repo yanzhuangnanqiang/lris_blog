@@ -102,7 +102,7 @@ const nextPost = computed(() => postIndex.value > 0 ? posts[postIndex.value - 1]
 .post-nav {
   display: flex;
   justify-content: center;
-  gap: 48px;
+  gap: 245px;
   margin-top: 48px;
   padding-top: 28px;
   border-top: 1px solid rgba(0,0,0,0.05);
