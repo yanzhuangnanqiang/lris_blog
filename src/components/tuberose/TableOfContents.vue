@@ -101,7 +101,7 @@ defineExpose({ open, close })
 }
 
 /* ===== 桌面 ===== */
-@media (min-width: 781px) {
+@media (min-width: 1350px) {
   .toc-wrapper {
     position: sticky;
     top: 2px;
@@ -124,7 +124,7 @@ defineExpose({ open, close })
 }
 
 /* ===== 移动 ===== */
-@media (max-width: 780px) {
+@media (max-width: 1349px) {
   .toc-wrapper {
     display: block;
     position: fixed;

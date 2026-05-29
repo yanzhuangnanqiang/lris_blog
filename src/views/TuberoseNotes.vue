@@ -160,6 +160,7 @@ const selectedNote = computed(() => notes.find(n => n.id === selectedId.value) |
 const renderedHtml = ref('')
 
 watch(selectedId, async (id) => {
+  mainRef.value?.scrollTo(0, 0)
   if (!id) { renderedHtml.value = ''; return }
   const note = notes.find(n => n.id === id)
   if (!note) return
@@ -252,15 +253,19 @@ const filteredArchive = computed(() => {
 .reader-wrapper {
   display: flex;
   align-items: flex-start;
+  gap: 10px;
   width: 100%;
   margin: 0 0 60px;
 }
+.reader-wrapper::before {
+  content: '';
+  flex: 0 1 210px;
+  min-width: 0;
+}
 /* ===== 阅读面板 ===== */
 .reader-panel {
-  margin-left: 10%;
-  margin-right: 10px;
-  flex: 1;
-  min-width: 0;
+  flex: 1 0 700px;
+  max-width: 1050px;
   padding: 40px 56px;
   background: rgba(30, 42, 50, 0.5);
   backdrop-filter: blur(20px);
@@ -286,7 +291,7 @@ const filteredArchive = computed(() => {
 
 .rp-cover {
   width: 100%;
-  height: 240px;
+  height: 490px;
   border-radius: 14px;
   background-size: cover;
   background-position: center;
@@ -316,7 +321,7 @@ const filteredArchive = computed(() => {
 .rp-body :deep(a) { color: #c0a8f0; text-decoration: none; border-bottom: 1px solid rgba(192,168,240,0.3); }
 .rp-body :deep(a:hover) { border-bottom-color: #c0a8f0; }
 .rp-body :deep(hr) { border: none; border-top: 1px solid rgba(255,255,255,0.06); margin: 32px 0; }
-.rp-body :deep(img) { max-width: 100%; border-radius: 12px; margin: 16px 0; }
+.rp-body :deep(img) { height: 500px; width: auto; max-width: 100%; object-fit: contain; border-radius: 12px; margin: 16px auto; display: block; }
 .rp-body :deep(table) { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 0.88rem; }
 .rp-body :deep(th), .rp-body :deep(td) { padding: 8px 14px; border: 1px solid rgba(255,255,255,0.08); text-align: left; }
 .rp-body :deep(th) { background: rgba(255,255,255,0.05); color: #fff; font-weight: 500; }
@@ -523,7 +528,7 @@ const filteredArchive = computed(() => {
 .toc-mobile-btn {
   display: none;
 }
-@media (max-width: 780px) {
+@media (max-width: 1349px) {
   .toc-mobile-btn {
     display: flex;
     align-items: center;
@@ -550,6 +555,7 @@ const filteredArchive = computed(() => {
   .toc-mobile-btn.hidden { transform: translateX(100%); opacity: 0; pointer-events: none; }
   .reader-wrapper { display: block; max-width: none; width: auto; margin: 0 0 60px; }
   .reader-panel { padding: 28px 20px; width: calc(100% - 24px); margin: 0 auto 60px; max-width: 1000px; margin-left: auto; margin-right: auto; }
+  .rp-body :deep(img) { max-width: 100%; height: auto; }
   .rp-cover { height: 180px; }
   .rp-header h1 { font-size: 1.4rem; }
   .archive-view { width: calc(100% - 24px); }

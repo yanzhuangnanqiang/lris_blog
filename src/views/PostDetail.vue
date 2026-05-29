@@ -27,7 +27,10 @@
 
           <div class="post-body" v-html="post.bodyHtml"></div>
 
-          <router-link class="back bottom" to="/">← 返回首页</router-link>
+          <nav class="post-nav">
+            <router-link v-if="prevPost" :to="`/post/${prevPost.id}`" class="pn-btn prev">← 上一篇 · {{ prevPost.title }}</router-link>
+            <router-link v-if="nextPost" :to="`/post/${nextPost.id}`" class="pn-btn next"> {{ nextPost.title }} · 下一篇 →</router-link>
+          </nav>
         </template>
 
         <footer class="end-cap">林间初见 · 难忘夏光</footer>
@@ -44,7 +47,10 @@ import MusicDock from '@/components/Player/MusicDock.vue'
 import { posts } from '@/data/loadPosts'
 
 const route = useRoute()
-const post = computed(() => posts.find(p => p.id === route.params.id))
+const postIndex = computed(() => posts.findIndex(p => p.id === route.params.id))
+const post = computed(() => posts[postIndex.value] || null)
+const prevPost = computed(() => postIndex.value < posts.length - 1 ? posts[postIndex.value + 1] : null)
+const nextPost = computed(() => postIndex.value > 0 ? posts[postIndex.value - 1] : null)
 </script>
 
 <style scoped>
@@ -72,17 +78,60 @@ const post = computed(() => posts.find(p => p.id === route.params.id))
 .back {
   display: inline-block;
   margin-bottom: 24px;
-  font-size: 0.85rem;
-  color: var(--text-body);
+  font-size: 0.8rem;
+  color: #5a7a62;
   text-decoration: none;
   letter-spacing: 2px;
-  transition: 0.2s;
+  position: relative;
+  padding-bottom: 3px;
+  transition: color 0.25s;
 }
-.back:hover { color: var(--text-dark); }
+.back::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  width: 0;
+  height: 1px;
+  background: #5a7a62;
+  transition: width 0.3s ease, left 0.3s ease;
+}
+.back:hover { color: #3d5a42; }
+.back:hover::after { width: 100%; left: 0; }
 
-.back.bottom {
-  margin-top: 40px;
-  margin-bottom: 0;
+.post-nav {
+  display: flex;
+  justify-content: center;
+  gap: 48px;
+  margin-top: 48px;
+  padding-top: 28px;
+  border-top: 1px solid rgba(0,0,0,0.05);
+}
+.pn-btn {
+  color: #5a7a62;
+  text-decoration: none;
+  font-size: 0.8rem;
+  font-weight: 400;
+  letter-spacing: 2px;
+  position: relative;
+  padding-bottom: 3px;
+  transition: color 0.25s;
+}
+.pn-btn::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  width: 0;
+  height: 1px;
+  background: #5a7a62;
+  transition: width 0.3s ease, left 0.3s ease;
+}
+.pn-btn:hover { color: #3d5a42; }
+.pn-btn:hover::after { width: 100%; left: 0; }
+.pn-btn.disabled { display: none; }
+@media (max-width: 540px) {
+  .post-nav { gap: 20px; }
 }
 
 /* ---- 头图 ---- */

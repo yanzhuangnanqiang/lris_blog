@@ -145,7 +145,7 @@ const allLanguages = computed(() =>
 const filteredRepos = computed(() => {
   let list = repos.value
   const q = repoSearch.value.trim().toLowerCase()
-  if (q) list = list.filter(r => r.name.toLowerCase().includes(q) || (r.description || '').toLowerCase().includes(q) || (r.language || '').toLowerCase().includes(q))
+  if (q) list = list.filter(r => r.name.toLowerCase().includes(q) || (r.description || '').toLowerCase().includes(q) || (r.language || '').toLowerCase().includes(q) || (displayName(r) || '').toLowerCase().includes(q))
   if (filterLangs.value.length) list = list.filter(r => filterLangs.value.includes(r.language))
   return list
 })
@@ -269,13 +269,21 @@ async function fetchWithTimeout(url, timeout = 8000) {
   finally { clearTimeout(t) }
 }
 
+const savedSearch = sessionStorage.getItem('projectSearch')
+if (savedSearch) repoSearch.value = savedSearch
+watch(repoSearch, (v) => { sessionStorage.setItem('projectSearch', v) })
+
+const cached = sessionStorage.getItem('projectRepos')
+if (cached) { try { repos.value = JSON.parse(cached); loading.value = false } catch (e) {} }
+
 onMounted(async () => {
   try {
     const res = await fetchWithTimeout('https://api.github.com/users/yanzhuangnanqiang/repos?sort=updated&per_page=100')
     if (!res.ok) throw new Error(`${res.status}`)
     const data = await res.json()
     repos.value = data.filter(r => !r.fork).sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at))
-  } catch (e) { error.value = e?.name === 'AbortError' ? '请求超时' : (e?.message || String(e)) }
+    sessionStorage.setItem('projectRepos', JSON.stringify(repos.value))
+  } catch (e) { if (!repos.value.length) error.value = e?.name === 'AbortError' ? '请求超时' : (e?.message || String(e)) }
   finally { loading.value = false }
   try {
     const cres = await fetchWithTimeout('https://github-contributions-api.deno.dev/yanzhuangnanqiang.json')
@@ -287,6 +295,10 @@ onMounted(async () => {
       buildCalendar(contribs, json.totalContributions)
     }
   } catch (e) { console.error('contrib fetch error:', e) }
+})
+
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible') pickedRepo.value = null
 })
 </script>
 
