@@ -34,16 +34,6 @@
         </div>
       </section>
 
-      <!-- 社交链接 -->
-      <div class="left-bottom">
-        <IconLink
-          v-for="c in contacts"
-          :key="c.name"
-          :name="c.name"
-          :icon="c.icon"
-          :url="c.url"
-        />
-      </div>
       <router-link class="right-bottom" to="/notes">
         <IconLink name="手帐" icon="notebook" url="javascript:void(0)" />
       </router-link>
@@ -63,7 +53,13 @@
             >{{ cat }}</button>
           </div>
 
-          <div class="post-list">
+          <div class="posts-layout">
+            <aside class="posts-side">
+              <ProfileCard />
+              <AnnouncementCard />
+            </aside>
+            <div class="posts-main">
+              <div class="post-list">
             <article
               v-for="(post, i) in filteredPosts"
               :key="post.id"
@@ -71,19 +67,24 @@
               :style="{ animationDelay: `${0.1 + i * 0.12}s` }"
               @click="goToPost(post.id)"
             >
-              <div class="post-left">
-                <img :src="post.photoSrc" :alt="post.title" loading="lazy" decoding="async" />
-              </div>
-              <div class="post-right">
+              <div class="post-info">
+                <h3 class="post-title">{{ post.title }}</h3>
                 <div class="post-meta">
                   <span class="post-cat">{{ post.category }}</span>
                   <span class="post-date">{{ post.date }}</span>
                 </div>
-                <h3 class="post-title">{{ post.title }}</h3>
                 <p class="post-excerpt">{{ post.excerpt }}</p>
-                <span class="post-expand">— 阅读全文</span>
+                <div class="post-foot">
+                  <span class="post-words">{{ post.wordCount }} 字</span>
+                  <span class="post-expand">— 阅读全文</span>
+                </div>
+              </div>
+              <div class="post-cover">
+                <img :src="post.photoSrc" :alt="post.title" loading="lazy" decoding="async" @load="onImgLoad" />
               </div>
             </article>
+              </div>
+            </div>
           </div>
 
           <footer class="end-cap">林间初见 · 难忘夏光</footer>
@@ -100,7 +101,8 @@ import TopBar from '@/components/app/TopBar.vue'
 import MusicDock from '@/components/Player/MusicDock.vue'
 import IconLink from '@/components/app/IconLink.vue'
 import PetalEffect from '@/components/tuberose/PetalEffect.vue'
-import { contacts } from '@/data/contacts'
+import ProfileCard from '@/components/home/ProfileCard.vue'
+import AnnouncementCard from '@/components/home/AnnouncementCard.vue'
 import { whispers } from '@/data/thoughts'
 import { posts } from '@/data/loadPosts'
 import heroBg from '@/assets/xiaguang.jpg'
@@ -163,6 +165,9 @@ function restoreScroll() {
 function goToPost(id) {
   saveScroll()
   router.push(`/post/${id}`)
+}
+function onImgLoad(e) {
+  e.target.classList.add('loaded')
 }
 function scrollToPosts() {
   postsRef.value?.scrollIntoView({ behavior: 'smooth' })
@@ -557,14 +562,6 @@ onBeforeUnmount(() => {
 }
 
 /* ---- 角落 ---- */
-.left-bottom {
-  position: fixed;
-  left: 18px;
-  bottom: 18px;
-  z-index: 60;
-  display: flex;
-  gap: 14px;
-}
 .right-bottom {
   position: fixed;
   right: 18px;
@@ -623,9 +620,32 @@ onBeforeUnmount(() => {
 }
 
 .posts-container {
-  max-width: 820px;
-  width: min(820px, calc(100vw - 48px));
+  max-width: 1200px;
+  width: min(1200px, calc(100vw - 48px));
   margin: 0 auto;
+}
+
+.posts-layout {
+  display: flex;
+  gap: 32px;
+  align-items: flex-start;
+}
+
+.posts-side {
+  width: 300px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  position: sticky;
+  top: 24px;
+  align-self: flex-start;
+}
+
+.posts-main {
+  flex: 1;
+  min-width: 0;
+  max-width: 720px;
 }
 
 .section-title {
@@ -667,27 +687,25 @@ onBeforeUnmount(() => {
 .post-list {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 18px;
 }
 
 .post-card {
   display: flex;
-  gap: 20px;
-  padding: 16px;
+  align-items: stretch;
+  overflow: hidden;
   border-radius: 16px;
   background: var(--card-bg);
   border: 1px solid rgba(0,0,0,0.04);
   cursor: pointer;
   transition: 0.3s ease;
-  position: relative;
-  flex-wrap: wrap;
   box-shadow: var(--shadow-card);
 }
 
 .post-card:hover {
   background: rgba(250,252,251,0.98);
   box-shadow: var(--shadow-card-hover);
-  transform: scale(1.008);
+  transform: translateY(-3px);
 }
 
 .post-card:active {
@@ -696,23 +714,55 @@ onBeforeUnmount(() => {
   transition: 0.1s ease;
 }
 
-.post-left {
+.post-cover {
+  width: 200px;
   flex-shrink: 0;
-  width: 160px;
-  height: 120px;
-  border-radius: 10px;
   overflow: hidden;
+  position: relative;
+  background: linear-gradient(135deg, #e2ece3 0%, #d8e5da 50%, #e2ece3 100%);
 }
 
-.post-left img {
+.post-cover::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background: linear-gradient(110deg, transparent 25%, rgba(255,255,255,0.5) 50%, transparent 75%);
+  transform: translateX(-100%);
+  animation: cardShimmer 1.8s ease-in-out infinite;
+}
+
+.post-cover img {
+  position: relative;
+  z-index: 2;
   width: 100%;
   height: 100%;
   object-fit: cover;
+  opacity: 0;
+  filter: blur(12px);
+  transform: scale(1.06);
+  transition: opacity 0.7s ease, filter 0.7s ease, transform 0.7s ease;
 }
 
-.post-right {
+.post-cover img.loaded {
+  opacity: 1;
+  filter: blur(0);
+  transform: scale(1);
+}
+
+.post-card:hover .post-cover img.loaded {
+  transform: scale(1.06);
+}
+
+@keyframes cardShimmer {
+  0% { transform: translateX(-100%); }
+  60%, 100% { transform: translateX(100%); }
+}
+
+.post-info {
   flex: 1;
-  min-width: 260px;
+  min-width: 0;
+  padding: 16px 20px;
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -740,11 +790,13 @@ onBeforeUnmount(() => {
 }
 
 .post-title {
-  font-size: 1.1rem;
+  font-size: 1.15rem;
   font-weight: 500;
   color: var(--text-dark);
-  margin: 0 0 6px;
+  margin: 0 0 8px;
   letter-spacing: 1px;
+  border-left: 3px solid var(--iris-purple);
+  padding-left: 12px;
 }
 
 .post-excerpt {
@@ -759,8 +811,20 @@ onBeforeUnmount(() => {
   overflow: hidden;
 }
 
+.post-foot {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 10px;
+}
+
+.post-words {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  letter-spacing: 1px;
+}
+
 .post-expand {
-  margin-top: 8px;
   font-size: 0.75rem;
   color: rgba(0,0,0,0.3);
   letter-spacing: 2px;
@@ -787,8 +851,8 @@ onBeforeUnmount(() => {
 
 @media (max-width: 860px) {
   .hero-title { font-size: 2.8rem; }
-  .post-card { flex-direction: column; }
-  .post-left { width: 100%; height: 180px; }
-  .left-bottom { gap: 8px; }
+  .posts-side { display: none; }
+  .post-cover { width: 130px; }
+  .post-info { padding: 12px 14px; }
 }
 </style>

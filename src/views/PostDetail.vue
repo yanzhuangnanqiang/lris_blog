@@ -28,26 +28,7 @@
 
           <div class="post-body" v-html="post.bodyHtml"></div>
 
-          <div class="comments">
-            <h3 class="comments-title">评论</h3>
-            <div class="comment-list">
-              <div v-if="comments.length === 0" class="comment-empty">还没有评论，来抢沙发～</div>
-              <div v-for="c in comments" :key="c.id" class="comment-item">
-                <div class="comment-head">
-                  <span class="comment-name">{{ c.name }}</span>
-                  <span class="comment-time">{{ c.created_at }}</span>
-                </div>
-                <p class="comment-content">{{ c.content }}</p>
-              </div>
-            </div>
-            <div class="comment-form">
-              <input v-model="commentName" placeholder="昵称" class="comment-input" />
-              <textarea v-model="commentContent" placeholder="说点什么…" class="comment-textarea"></textarea>
-              <button class="comment-submit" :disabled="submitting" @click="onCommentSubmit">
-                {{ submitting ? '提交中…' : '发表评论' }}
-              </button>
-            </div>
-          </div>
+          <GiscusComment :term="'/post/' + route.params.id" />
 
           <nav class="post-nav">
             <router-link v-if="prevPost" :to="`/post/${prevPost.id}`" class="pn-btn prev">← 上一篇 · {{ prevPost.title }}</router-link>
@@ -68,7 +49,7 @@ import TopBar from '@/components/app/TopBar.vue'
 import MusicDock from '@/components/Player/MusicDock.vue'
 import { posts } from '@/data/loadPosts'
 import { recordView } from '@/api/views'
-import { fetchComments, submitComment } from '@/api/comments'
+import GiscusComment from '@/components/app/GiscusComment.vue'
 
 const route = useRoute()
 const postIndex = computed(() => posts.findIndex(p => p.id === route.params.id))
@@ -77,32 +58,6 @@ const prevPost = computed(() => postIndex.value < posts.length - 1 ? posts[postI
 const nextPost = computed(() => postIndex.value > 0 ? posts[postIndex.value - 1] : null)
 
 const viewCount = ref(null)
-const comments = ref([])
-const commentName = ref('')
-const commentContent = ref('')
-const submitting = ref(false)
-
-async function loadComments(postId) {
-  try {
-    comments.value = await fetchComments(postId)
-  } catch {
-    comments.value = []
-  }
-}
-
-async function onCommentSubmit() {
-  const name = commentName.value.trim()
-  const content = commentContent.value.trim()
-  if (!name || !content) return
-  submitting.value = true
-  try {
-    await submitComment(route.params.id, name, content)
-    commentContent.value = ''
-    await loadComments(route.params.id)
-  } finally {
-    submitting.value = false
-  }
-}
 
 function setupReveal() {
   if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
@@ -135,7 +90,6 @@ watch(
     recordView(id)
       .then(r => { viewCount.value = r.count })
       .catch(() => {})
-    loadComments(id)
     setupReveal()
   },
   { immediate: true }
@@ -379,102 +333,12 @@ watch(
   max-width: 100%;
   border-radius: 12px;
   margin: 12px 0;
+  transition: transform 0.3s ease;
+  cursor: zoom-in;
 }
 
-/* ---- 评论 ---- */
-.comments {
-  margin-top: 48px;
-  padding-top: 28px;
-  border-top: 1px solid rgba(0,0,0,0.05);
-}
-
-.comments-title {
-  font-size: 1.1rem;
-  font-weight: 400;
-  color: var(--text-dark);
-  letter-spacing: 2px;
-  margin: 0 0 20px;
-}
-
-.comment-list {
-  margin-bottom: 24px;
-}
-
-.comment-empty {
-  font-size: 0.85rem;
-  color: var(--text-muted);
-  text-align: center;
-  padding: 20px 0;
-}
-
-.comment-item {
-  padding: 14px 0;
-  border-bottom: 1px solid rgba(0,0,0,0.05);
-}
-
-.comment-head {
-  display: flex;
-  justify-content: space-between;
-  align-items: baseline;
-  margin-bottom: 6px;
-}
-
-.comment-name {
-  font-size: 0.85rem;
-  font-weight: 500;
-  color: var(--text-dark);
-}
-
-.comment-time {
-  font-size: 0.72rem;
-  color: var(--text-muted);
-}
-
-.comment-content {
-  margin: 0;
-  font-size: 0.9rem;
-  color: var(--text-body);
-  line-height: 1.7;
-}
-
-.comment-form {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.comment-input,
-.comment-textarea {
-  padding: 10px 14px;
-  border: 1px solid rgba(0,0,0,0.1);
-  border-radius: 8px;
-  font-size: 0.9rem;
-  font-family: inherit;
-  background: transparent;
-  color: var(--text-dark);
-  outline: none;
-}
-
-.comment-textarea {
-  min-height: 80px;
-  resize: vertical;
-}
-
-.comment-submit {
-  align-self: flex-end;
-  padding: 8px 22px;
-  border: none;
-  border-radius: 20px;
-  background: var(--mint-green);
-  color: var(--text-dark);
-  font-size: 0.85rem;
-  letter-spacing: 1px;
-  cursor: pointer;
-}
-
-.comment-submit:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
+.post-body :deep(img:hover) {
+  transform: scale(1.04);
 }
 
 /* ---- 未找到 ---- */

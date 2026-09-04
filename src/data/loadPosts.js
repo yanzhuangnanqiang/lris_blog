@@ -41,6 +41,15 @@ function extractExcerpt(md) {
   return clean.slice(0, 120)
 }
 
+function countChars(md) {
+  return md
+    .replace(/^#{1,6}\s+.*$/gm, '')
+    .replace(/```[\s\S]*?```/g, '')
+    .replace(/[#*_~`>\[\]()!|-]/g, '')
+    .replace(/\s+/g, '')
+    .length
+}
+
 /**
  * 加载所有 .md 文章
  * 返回排序后的文章列表
@@ -58,6 +67,7 @@ export const posts = Object.entries(postModules)
       photo: meta.photo || '1',
       photoSrc: resolveThinkPhoto(meta.photo || '1') || '',
       excerpt: extractExcerpt(body),
+      wordCount: countChars(body),
       bodyMd: body.trim(),
       bodyHtml: marked.parse(body.trim()),
     }
