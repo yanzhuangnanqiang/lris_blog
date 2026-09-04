@@ -62,7 +62,7 @@
 </template>
 
 <script setup>
-import { computed, ref, watch } from 'vue'
+import { computed, ref, watch, nextTick } from 'vue'
 import { useRoute } from 'vue-router'
 import TopBar from '@/components/app/TopBar.vue'
 import MusicDock from '@/components/Player/MusicDock.vue'
@@ -104,6 +104,30 @@ async function onCommentSubmit() {
   }
 }
 
+function setupReveal() {
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
+  nextTick(() => {
+    const body = document.querySelector('.post-body')
+    if (!body) return
+    const els = body.querySelectorAll('p, h1, h2, h3, h4, blockquote, pre, img')
+    const io = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((e) => {
+          if (e.isIntersecting) {
+            e.target.classList.add('reveal-in')
+            io.unobserve(e.target)
+          }
+        })
+      },
+      { threshold: 0.06 }
+    )
+    els.forEach((el) => {
+      el.classList.add('reveal')
+      io.observe(el)
+    })
+  })
+}
+
 watch(
   () => route.params.id,
   (id) => {
@@ -112,6 +136,7 @@ watch(
       .then(r => { viewCount.value = r.count })
       .catch(() => {})
     loadComments(id)
+    setupReveal()
   },
   { immediate: true }
 )
@@ -205,6 +230,11 @@ watch(
   border-radius: 18px;
   overflow: hidden;
   margin-bottom: 24px;
+  animation: hero-in 0.7s ease both;
+}
+@keyframes hero-in {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 .post-hero img {
@@ -243,18 +273,28 @@ watch(
 
 .post-date {
   font-size: 0.8rem;
-  color: rgba(0,0,0,0.35);
+  color: var(--text-muted);
 }
 
 .post-views {
   font-size: 0.8rem;
-  color: rgba(0,0,0,0.35);
+  color: var(--text-muted);
 }
 
 /* ---- 正文 ---- */
 .post-body {
-  line-height: 2;
+  line-height: var(--lh-loose);
   color: var(--text-body);
+}
+
+.post-body :deep(.reveal) {
+  opacity: 0;
+  transform: translateY(18px);
+  transition: opacity 0.6s ease, transform 0.6s ease;
+}
+.post-body :deep(.reveal.reveal-in) {
+  opacity: 1;
+  transform: translateY(0);
 }
 
 .post-body :deep(h1),
@@ -273,7 +313,7 @@ watch(
 
 .post-body :deep(p) {
   margin: 0 0 16px;
-  font-size: 0.95rem;
+  font-size: var(--fs-base);
 }
 
 .post-body :deep(strong) {
@@ -362,7 +402,7 @@ watch(
 
 .comment-empty {
   font-size: 0.85rem;
-  color: rgba(0,0,0,0.35);
+  color: var(--text-muted);
   text-align: center;
   padding: 20px 0;
 }
@@ -387,7 +427,7 @@ watch(
 
 .comment-time {
   font-size: 0.72rem;
-  color: rgba(0,0,0,0.35);
+  color: var(--text-muted);
 }
 
 .comment-content {

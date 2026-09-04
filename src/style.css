@@ -8,7 +8,10 @@ html, body, #app {
   width: 100%;
   height: 100%;
   overflow: hidden;
-  font-family: 'Helvetica Neue', 'Arial', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  font-family: 'Helvetica Neue', -apple-system, 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'Noto Sans SC', system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
 }
 
 :root {
@@ -42,6 +45,21 @@ html, body, #app {
   --gap-card: 10px;
   --gap-section: 40px;
   --skeleton: linear-gradient(135deg, #e2ece3 0%, #d8e5da 50%, #e2ece3 100%);
+
+  /* 排版令牌 */
+  --fs-xs: 0.75rem;    /* 12px 辅助/标签 */
+  --fs-sm: 0.82rem;    /* 13px 次要文字 */
+  --fs-base: 0.95rem;  /* 15px 正文 */
+  --fs-md: 1.1rem;     /* 18px 小标题 */
+  --fs-lg: 1.35rem;    /* 22px 标题 */
+  --fs-xl: 1.6rem;     /* 26px 大标题 */
+  --fs-2xl: 1.9rem;    /* 30px 主标题 */
+  --lh-tight: 1.4;
+  --lh-body: 1.8;
+  --lh-loose: 2;
+  --ls-tight: 1px;
+  --ls-wide: 2px;
+  --ls-wider: 3px;
 }
 
 html, body, #app {
