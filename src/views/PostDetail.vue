@@ -22,10 +22,32 @@
             <div class="post-meta">
               <span class="post-cat">{{ post.category }}</span>
               <span class="post-date">{{ post.date }}</span>
+              <span v-if="viewCount !== null" class="post-views">{{ viewCount }} 次阅读</span>
             </div>
           </div>
 
           <div class="post-body" v-html="post.bodyHtml"></div>
+
+          <div class="comments">
+            <h3 class="comments-title">评论</h3>
+            <div class="comment-list">
+              <div v-if="comments.length === 0" class="comment-empty">还没有评论，来抢沙发～</div>
+              <div v-for="c in comments" :key="c.id" class="comment-item">
+                <div class="comment-head">
+                  <span class="comment-name">{{ c.name }}</span>
+                  <span class="comment-time">{{ c.created_at }}</span>
+                </div>
+                <p class="comment-content">{{ c.content }}</p>
+              </div>
+            </div>
+            <div class="comment-form">
+              <input v-model="commentName" placeholder="昵称" class="comment-input" />
+              <textarea v-model="commentContent" placeholder="说点什么…" class="comment-textarea"></textarea>
+              <button class="comment-submit" :disabled="submitting" @click="onCommentSubmit">
+                {{ submitting ? '提交中…' : '发表评论' }}
+              </button>
+            </div>
+          </div>
 
           <nav class="post-nav">
             <router-link v-if="prevPost" :to="`/post/${prevPost.id}`" class="pn-btn prev">← 上一篇 · {{ prevPost.title }}</router-link>
@@ -40,17 +62,59 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import TopBar from '@/components/app/TopBar.vue'
 import MusicDock from '@/components/Player/MusicDock.vue'
 import { posts } from '@/data/loadPosts'
+import { recordView } from '@/api/views'
+import { fetchComments, submitComment } from '@/api/comments'
 
 const route = useRoute()
 const postIndex = computed(() => posts.findIndex(p => p.id === route.params.id))
 const post = computed(() => posts[postIndex.value] || null)
 const prevPost = computed(() => postIndex.value < posts.length - 1 ? posts[postIndex.value + 1] : null)
 const nextPost = computed(() => postIndex.value > 0 ? posts[postIndex.value - 1] : null)
+
+const viewCount = ref(null)
+const comments = ref([])
+const commentName = ref('')
+const commentContent = ref('')
+const submitting = ref(false)
+
+async function loadComments(postId) {
+  try {
+    comments.value = await fetchComments(postId)
+  } catch {
+    comments.value = []
+  }
+}
+
+async function onCommentSubmit() {
+  const name = commentName.value.trim()
+  const content = commentContent.value.trim()
+  if (!name || !content) return
+  submitting.value = true
+  try {
+    await submitComment(route.params.id, name, content)
+    commentContent.value = ''
+    await loadComments(route.params.id)
+  } finally {
+    submitting.value = false
+  }
+}
+
+watch(
+  () => route.params.id,
+  (id) => {
+    viewCount.value = null
+    recordView(id)
+      .then(r => { viewCount.value = r.count })
+      .catch(() => {})
+    loadComments(id)
+  },
+  { immediate: true }
+)
 </script>
 
 <style scoped>
@@ -182,6 +246,11 @@ const nextPost = computed(() => postIndex.value > 0 ? posts[postIndex.value - 1]
   color: rgba(0,0,0,0.35);
 }
 
+.post-views {
+  font-size: 0.8rem;
+  color: rgba(0,0,0,0.35);
+}
+
 /* ---- 正文 ---- */
 .post-body {
   line-height: 2;
@@ -270,6 +339,102 @@ const nextPost = computed(() => postIndex.value > 0 ? posts[postIndex.value - 1]
   max-width: 100%;
   border-radius: 12px;
   margin: 12px 0;
+}
+
+/* ---- 评论 ---- */
+.comments {
+  margin-top: 48px;
+  padding-top: 28px;
+  border-top: 1px solid rgba(0,0,0,0.05);
+}
+
+.comments-title {
+  font-size: 1.1rem;
+  font-weight: 400;
+  color: var(--text-dark);
+  letter-spacing: 2px;
+  margin: 0 0 20px;
+}
+
+.comment-list {
+  margin-bottom: 24px;
+}
+
+.comment-empty {
+  font-size: 0.85rem;
+  color: rgba(0,0,0,0.35);
+  text-align: center;
+  padding: 20px 0;
+}
+
+.comment-item {
+  padding: 14px 0;
+  border-bottom: 1px solid rgba(0,0,0,0.05);
+}
+
+.comment-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 6px;
+}
+
+.comment-name {
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--text-dark);
+}
+
+.comment-time {
+  font-size: 0.72rem;
+  color: rgba(0,0,0,0.35);
+}
+
+.comment-content {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--text-body);
+  line-height: 1.7;
+}
+
+.comment-form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.comment-input,
+.comment-textarea {
+  padding: 10px 14px;
+  border: 1px solid rgba(0,0,0,0.1);
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-family: inherit;
+  background: transparent;
+  color: var(--text-dark);
+  outline: none;
+}
+
+.comment-textarea {
+  min-height: 80px;
+  resize: vertical;
+}
+
+.comment-submit {
+  align-self: flex-end;
+  padding: 8px 22px;
+  border: none;
+  border-radius: 20px;
+  background: var(--mint-green);
+  color: var(--text-dark);
+  font-size: 0.85rem;
+  letter-spacing: 1px;
+  cursor: pointer;
+}
+
+.comment-submit:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 /* ---- 未找到 ---- */
