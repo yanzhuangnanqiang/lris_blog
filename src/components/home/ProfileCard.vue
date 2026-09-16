@@ -59,6 +59,13 @@ const sayCount = computed(() => lifeJournal.reduce((sum, day) => sum + day.items
   display: flex;
   gap: 16px;
   align-items: flex-start;
+  animation: cardIn 0.6s ease 0.3s both;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.profile-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-card-hover);
 }
 
 .pc-avatar {

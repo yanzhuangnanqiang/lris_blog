@@ -100,11 +100,17 @@ function onDiscClick() {
   padding: 0;
   flex-shrink: 0;
   box-shadow: 0 3px 14px rgba(0,0,0,0.1);
-  transition: box-shadow 0.3s ease;
+  transition: box-shadow 0.3s ease, transform 0.3s ease;
 }
 
 .disc-btn:hover {
   box-shadow: 0 5px 20px rgba(0,0,0,0.15);
+  transform: scale(1.1);
+}
+
+.disc-btn:active {
+  transform: scale(0.94);
+  transition: transform 0.12s ease;
 }
 
 .disc-img {

@@ -51,11 +51,24 @@
       <input type="range" min="0" max="1" step="0.05" :value="store.volume" @input="store.volume = $event.target.value" class="vol-bar" />
       <span class="vol-spacer"></span>
     </div>
+
+    <div class="playlist" ref="playlistRef">
+      <button
+        v-for="(t, i) in store.tracks"
+        :key="t.file"
+        class="pl-item"
+        :class="{ active: i === store.idx }"
+        @click="store.select(i)"
+      >
+        <span class="pl-idx">{{ i + 1 }}</span>
+        <span class="pl-title">{{ t.title }}</span>
+      </button>
+    </div>
   </div>
 </template>
 
 <script setup>
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, watch, nextTick } from 'vue'
 import { useMusicStore } from '@/stores/music'
 
 import skipBack from '@/assets/skip-back.svg'
@@ -73,6 +86,14 @@ const emit = defineEmits(['play-state', 'close'])
 const store = useMusicStore()
 
 const showTotal = ref(false)
+const playlistRef = ref(null)
+
+// 切歌时，把当前曲目自动滚进视野
+watch(() => store.idx, () => {
+  nextTick(() => {
+    playlistRef.value?.querySelector('.pl-item.active')?.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
+  })
+})
 
 const artistPalette = {
   'EP': '#9a8bb8',
@@ -292,5 +313,66 @@ onMounted(() => { if (!store.playing) store.loadTrack() })
   width: 18px; height: 18px; border-radius: 50%;
   background: url("data:image/svg+xml,%3Csvg viewBox='0 0 20 20' xmlns='http://www.w3.org/2000/svg'%3E%3Cg transform='translate(10,10)'%3E%3Cellipse cx='0' cy='-4.5' rx='1.8' ry='3.5' fill='%23a0d2b9' opacity='.7'/%3E%3Cellipse cx='0' cy='-4.5' rx='1.8' ry='3.5' fill='%23a0d2b9' opacity='.7' transform='rotate(72)'/%3E%3Cellipse cx='0' cy='-4.5' rx='1.8' ry='3.5' fill='%23a0d2b9' opacity='.7' transform='rotate(144)'/%3E%3Cellipse cx='0' cy='-4.5' rx='1.8' ry='3.5' fill='%23a0d2b9' opacity='.7' transform='rotate(216)'/%3E%3Cellipse cx='0' cy='-4.5' rx='1.8' ry='3.5' fill='%23a0d2b9' opacity='.7' transform='rotate(288)'/%3E%3Ccircle cx='0' cy='0' r='2.2' fill='%2380b098' opacity='.7'/%3E%3C/g%3E%3C/svg%3E") no-repeat center;
   background-size: 100%; cursor: pointer; border: none;
+}
+
+/* ---- 歌单 ---- */
+.playlist {
+  margin-top: 10px;
+  border-top: 1px solid rgba(0, 0, 0, 0.06);
+  padding-top: 8px;
+  display: flex;
+  flex-direction: column;
+  max-height: 120px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+}
+
+.playlist::-webkit-scrollbar {
+  display: block;
+  width: 4px;
+}
+
+.playlist::-webkit-scrollbar-thumb {
+  background: rgba(160, 210, 185, 0.35);
+  border-radius: 2px;
+}
+
+.playlist::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.pl-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  border-radius: 8px;
+  text-align: left;
+  transition: background 0.2s;
+}
+
+.pl-item:hover {
+  background: rgba(160, 210, 185, 0.15);
+}
+
+.pl-item.active {
+  background: rgba(160, 210, 185, 0.25);
+}
+
+.pl-idx {
+  font-size: 0.65rem;
+  color: rgba(0, 0, 0, 0.3);
+  min-width: 16px;
+}
+
+.pl-title {
+  font-size: 0.75rem;
+  color: var(--text-body);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 </style>

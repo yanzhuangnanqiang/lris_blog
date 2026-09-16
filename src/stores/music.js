@@ -1,12 +1,6 @@
 import { ref, computed, watch } from 'vue'
 import { defineStore } from 'pinia'
-
-const tracks = [
-  { title: '赛琳娜 希声_缘纺祈糸', file: '赛琳娜 希声_缘纺祈糸.mp3', artist: '赛琳娜' },
-  { title: '流离叠奏', file: '流离叠奏.mp3', artist: '赛琳娜' },
-  { title: 'Dreaming to the Glowing Place', file: 'EP - Dreaming to the Glowing Place_.mp3', artist: '赛琳娜' },
-  { title: 'Dear You 致你', file: '赛琳娜·希声 《Dear You 致你》.mp3', artist: '赛琳娜' },
-]
+import { tracks } from '@/data/playlist'
 
 function makeUrl(file) { return `/music/${file}` }
 
@@ -106,7 +100,7 @@ export const useMusicStore = defineStore('music', () => {
       stopVisualizer()
     } else {
       if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume()
-      if (!analyser) initAnalyser()
+      initAnalyser()
       audio.play().catch(() => {})
       playing.value = true
     }
@@ -114,6 +108,14 @@ export const useMusicStore = defineStore('music', () => {
 
   function next() { idx.value = (idx.value + 1) % tracks.length }
   function prev() { idx.value = (idx.value - 1 + tracks.length) % tracks.length }
+  function select(i) {
+    if (i === idx.value) {
+      if (!playing.value) toggle()
+      return
+    }
+    idx.value = i
+    playing.value = true
+  }
 
   function onSeek(val) {
     if (!audio) return
@@ -147,6 +149,6 @@ export const useMusicStore = defineStore('music', () => {
   return {
     idx, playing, currentTime, duration, seek, volume, muted, volBefore, loop,
     current, bars, tracks,
-    toggle, next, prev, onSeek, toggleMute, fmt, loadTrack, initAnalyser,
+    toggle, next, prev, select, onSeek, toggleMute, fmt, loadTrack, initAnalyser,
   }
 })

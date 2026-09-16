@@ -30,7 +30,7 @@
         </div>
 
         <div class="scroll-hint" @click="scrollToPosts">
-          <span class="arrow">↓</span>
+          <img :src="chevronDown" class="arrow" alt="向下滚动" />
         </div>
       </section>
 
@@ -57,6 +57,7 @@
             <aside class="posts-side">
               <ProfileCard />
               <AnnouncementCard />
+              <LatestNotesCard />
             </aside>
             <div class="posts-main">
               <div class="post-list">
@@ -103,9 +104,11 @@ import IconLink from '@/components/app/IconLink.vue'
 import PetalEffect from '@/components/tuberose/PetalEffect.vue'
 import ProfileCard from '@/components/home/ProfileCard.vue'
 import AnnouncementCard from '@/components/home/AnnouncementCard.vue'
+import LatestNotesCard from '@/components/home/LatestNotesCard.vue'
 import { whispers } from '@/data/thoughts'
 import { posts } from '@/data/loadPosts'
 import heroBg from '@/assets/xiaguang.jpg'
+import chevronDown from '@/assets/chevron-down.svg'
 
 const router = useRouter()
 const activeCat = ref('全部')
@@ -551,8 +554,9 @@ onBeforeUnmount(() => {
   cursor: pointer;
 }
 .scroll-hint .arrow {
-  font-size: 1.3rem;
-  color: rgba(255,255,255,0.4);
+  width: 30px;
+  height: 30px;
+  color: rgba(255,255,255,0.55);
   animation: bounce 2s ease infinite;
   display: block;
 }

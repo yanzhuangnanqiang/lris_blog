@@ -1,9 +1,17 @@
+<!--
+ * @Author       : Hidden Goose yanzhuangqiang@email.ncu.edu.cn
+ * @Date         : 2026-09-04 22:12:51
+ * @LastEditors  : Hidden Goose yanzhuangqiang@email.ncu.edu.cn
+ * @LastEditTime : 2026-09-05 08:00:49
+ * @FilePath     : /myweb-Hiddengoose/src/components/home/AnnouncementCard.vue
+ * @Description  : 如果你喜欢的话， 请你一定要保持好的心情继续喜欢下去😘🥰
+-->
 <template>
   <aside class="announce-card">
     <h3 class="ac-title">公 告</h3>
     <ul class="ac-list">
       <li class="ac-item">欢迎来到「林间初见」～</li>
-      <li class="ac-item">这里记录学习随想与思考。</li>
+      <li class="ac-item">这是第一版测试~稍微增加一点互动性内容，不过网站主要还是静态网站。</li>
     </ul>
   </aside>
 </template>
@@ -18,6 +26,13 @@
   backdrop-filter: var(--glass-blur);
   -webkit-backdrop-filter: var(--glass-blur);
   box-shadow: var(--shadow-card);
+  animation: cardIn 0.6s ease 0.45s both;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.announce-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-card-hover);
 }
 
 .ac-title {
