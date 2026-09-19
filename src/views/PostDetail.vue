@@ -22,7 +22,6 @@
             <div class="post-meta">
               <span class="post-cat">{{ post.category }}</span>
               <span class="post-date">{{ post.date }}</span>
-              <span v-if="viewCount !== null" class="post-views">{{ viewCount }} 次阅读</span>
             </div>
           </div>
 
@@ -43,12 +42,11 @@
 </template>
 
 <script setup>
-import { computed, ref, watch, nextTick } from 'vue'
+import { computed, watch, nextTick } from 'vue'
 import { useRoute } from 'vue-router'
 import TopBar from '@/components/app/TopBar.vue'
 import MusicDock from '@/components/Player/MusicDock.vue'
 import { posts } from '@/data/loadPosts'
-import { recordView } from '@/api/views'
 import GiscusComment from '@/components/app/GiscusComment.vue'
 
 const route = useRoute()
@@ -56,8 +54,6 @@ const postIndex = computed(() => posts.findIndex(p => p.id === route.params.id))
 const post = computed(() => posts[postIndex.value] || null)
 const prevPost = computed(() => postIndex.value < posts.length - 1 ? posts[postIndex.value + 1] : null)
 const nextPost = computed(() => postIndex.value > 0 ? posts[postIndex.value - 1] : null)
-
-const viewCount = ref(null)
 
 function setupReveal() {
   if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
@@ -85,11 +81,7 @@ function setupReveal() {
 
 watch(
   () => route.params.id,
-  (id) => {
-    viewCount.value = null
-    recordView(id)
-      .then(r => { viewCount.value = r.count })
-      .catch(() => {})
+  () => {
     setupReveal()
   },
   { immediate: true }
@@ -230,10 +222,6 @@ watch(
   color: var(--text-muted);
 }
 
-.post-views {
-  font-size: 0.8rem;
-  color: var(--text-muted);
-}
 
 /* ---- 正文 ---- */
 .post-body {

@@ -8,14 +8,6 @@ import { ViteImageOptimizer } from 'vite-plugin-image-optimizer'
 // https://vite.dev/config/
 export default defineConfig({
   base: '/',
-  server: {
-    proxy: {
-      '/api': {
-        target: 'http://localhost:3000',
-        changeOrigin: true,
-      },
-    },
-  },
   plugins: [
     vue(),
     vueDevTools(),
