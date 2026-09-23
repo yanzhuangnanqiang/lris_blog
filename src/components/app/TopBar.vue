@@ -15,39 +15,50 @@
   >
     <div class="left">
       <slot name="left-extra" />
-      <div class="brand" @click="go('/')">
+      <a class="brand" href="/" @click="onNavClick($event, '/')">
         <span class="brand-title">林间初见</span>
         <span class="brand-sub">Iris / Tuberose</span>
-      </div>
+      </a>
 
-      <nav class="nav desktop">
-        <a :class="{ on: isOn('/') }" @click.prevent="go('/')">首页</a>
-        <a :class="{ on: isOn('/share') }" @click.prevent="go('/share')">分享</a>
-        <a :class="{ on: isOn('/projects') }" @click.prevent="go('/projects')">项目</a>
-        <a :class="{ on: isOn('/notes') }" @click.prevent="go('/notes')">笔记</a>
-        <a :class="{ on: isOn('/about') }" @click.prevent="go('/about')">关于</a>
+      <nav ref="navRef" class="nav desktop">
+        <!-- 刻度线在下层，跟着激活项滑动；文字靠 z-index 压在上面 -->
+        <span class="nav-tick" :style="tickStyle" aria-hidden="true"></span>
+        <a
+          v-for="l in links"
+          :key="l.path"
+          :href="l.path"
+          :class="{ on: isOn(l.path) }"
+          @click="onNavClick($event, l.path)"
+        ><span class="lbl">{{ l.label }}</span></a>
       </nav>
     </div>
 
     <div class="right">
-      <button class="menu-btn mobile" @click="menuOpen = !menuOpen">
+      <button
+        class="menu-btn mobile"
+        :aria-expanded="menuOpen"
+        aria-label="导航菜单"
+        @click="menuOpen = !menuOpen"
+      >
         {{ menuOpen ? '✕' : '☰' }}
       </button>
       <AvatarChip class="avatar" @click="go('/about')" />
     </div>
 
     <div v-if="menuOpen" class="nav mobile-panel">
-      <a :class="{ on: isOn('/') }" @click.prevent="goAndClose('/')">首页</a>
-      <a :class="{ on: isOn('/share') }" @click.prevent="goAndClose('/share')">分享</a>
-      <a :class="{ on: isOn('/projects') }" @click.prevent="goAndClose('/projects')">项目</a>
-      <a :class="{ on: isOn('/notes') }" @click.prevent="goAndClose('/notes')">笔记</a>
-      <a :class="{ on: isOn('/about') }" @click.prevent="goAndClose('/about')">关于</a>
+      <a
+        v-for="l in links"
+        :key="l.path"
+        :href="l.path"
+        :class="{ on: isOn(l.path) }"
+        @click="onNavClick($event, l.path, true)"
+      >{{ l.label }}</a>
     </div>
   </header>
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAppStore } from '@/stores/theme'
 import AvatarChip from './AvatarChip.vue'
@@ -59,16 +70,64 @@ const route = useRoute()
 const isHover = ref(false)
 const menuOpen = ref(false)
 
+const links = [
+  { path: '/', label: '首页' },
+  { path: '/share', label: '分享' },
+  { path: '/projects', label: '项目' },
+  { path: '/notes', label: '笔记' },
+  { path: '/about', label: '关于' },
+]
+
+const navRef = ref(null)
+// 刻度线是定长的，所以滑动只需要 translateX —— 不用碰 width（见 .nav-tick 的注释）
+const TICK_W = 18 // 必须和 CSS 里 .nav-tick 的 width 一致
+// 初始 opacity 0：/post/:id 和 /gallery 匹配不到任何一项，刻度线本来就该是隐形的
+const tickStyle = ref({ opacity: 0 })
+let ready = false
+
+// 把刻度线移到当前激活项正下方居中。只在路由变化和 resize 时量，不在滚动或每帧里量。
+// 用 offsetLeft/offsetWidth 而不是百分比：标签宽度不等时百分比会错位。
+function syncTick() {
+  const nav = navRef.value
+  if (!nav) return
+  const el = [...nav.querySelectorAll('a')].find(a => a.classList.contains('on'))
+  if (!el) {
+    tickStyle.value = { ...tickStyle.value, opacity: 0 }
+    ready = true
+    return
+  }
+  tickStyle.value = {
+    opacity: 1,
+    transform: `translateX(${el.offsetLeft + el.offsetWidth / 2 - TICK_W / 2}px)`,
+    // 首次测量先关掉过渡，否则进页面能看到刻度线从最左边滑过来
+    transition: ready ? '' : 'none',
+  }
+  ready = true
+}
+
 function go(path) {
   router.push(path)
 }
-function goAndClose(path) {
-  menuOpen.value = false
+
+// 只接管不带修饰键的左键点击，其余（Ctrl/Cmd/中键）交还浏览器，
+// 这样「在新标签页打开」走原生行为，而不是被 preventDefault 吃掉。
+function onNavClick(e, path, closeMenu = false) {
+  if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return
+  e.preventDefault()
+  if (closeMenu) menuOpen.value = false
   go(path)
 }
+
 function isOn(path) {
   return route.path === path
 }
+
+watch(() => route.path, () => nextTick(syncTick))
+onMounted(() => {
+  nextTick(syncTick)
+  window.addEventListener('resize', syncTick)
+})
+onUnmounted(() => window.removeEventListener('resize', syncTick))
 </script>
 
 <style scoped>
@@ -145,6 +204,7 @@ function isOn(path) {
   display: flex;
   flex-direction: column;
   line-height: 1.1;
+  text-decoration: none;
 }
 
 .brand-title {
@@ -160,24 +220,70 @@ function isOn(path) {
   margin-top: 2px;
 }
 
+/* position: relative 让 offsetLeft 的参照系和药丸的 left: 0 对齐 */
+.nav {
+  position: relative;
+  display: flex;
+  gap: 14px;
+}
+
+/* 定长刻度线。宽度恒定是有意的 —— 移动只靠 translateX，
+   不去 animate width（那会触发布局，也不符合性能守则里的 transform/opacity 约束）。
+   改宽度时记得同步 JS 里的 TICK_W。 */
+.nav-tick {
+  position: absolute;
+  left: 0;
+  bottom: -5px;
+  width: 18px;
+  height: 2px;
+  border-radius: 1px;
+  background: rgba(255, 255, 255, 0.75);
+  pointer-events: none;
+  transition:
+    transform 0.6s cubic-bezier(0.32, 0.72, 0, 1),
+    opacity 0.3s ease;
+}
+
 .nav a {
+  position: relative;
+  z-index: 1;
+  overflow: hidden;
   color: rgba(220, 230, 240, 0.75);
   text-decoration: none;
-  margin-right: 14px;
   font-size: 0.95rem;
   cursor: pointer;
   padding: 6px 10px;
   border-radius: 12px;
-  transition: 0.2s;
+  transition: color 0.2s;
 }
 
 .nav a.on {
   color: #fff;
-  background: rgba(220, 230, 240, 0.14);
 }
 
 .nav a:hover {
   color: #fff;
+}
+
+.nav a .lbl {
+  display: block;
+}
+
+/* 文字比药丸晚半拍滚入，看起来像「落位」而不是「一起扑上来」。
+   both 让延迟期间停在起始态，所以不会先正常再跳一下。 */
+.nav a.on .lbl {
+  animation: navRoll 0.42s cubic-bezier(0.2, 0.8, 0.2, 1) 120ms both;
+}
+
+@keyframes navRoll {
+  from {
+    transform: translateY(38%);
+    opacity: 0.25;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
 }
 
 .right {
@@ -227,9 +333,6 @@ function isOn(path) {
     backdrop-filter: blur(14px);
     border: 1px solid rgba(255, 255, 255, 0.12);
     border-radius: 16px;
-  }
-  .mobile-panel a {
-    margin-right: 0;
   }
 }
 </style>

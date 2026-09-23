@@ -107,7 +107,7 @@ import AnnouncementCard from '@/components/home/AnnouncementCard.vue'
 import LatestNotesCard from '@/components/home/LatestNotesCard.vue'
 import { whispers } from '@/data/thoughts'
 import { posts } from '@/data/loadPosts'
-import heroBg from '@/assets/xiaguang.jpg'
+import heroBg from '@/assets/optimized/xiaguang.webp'
 import chevronDown from '@/assets/chevron-down.svg'
 
 const router = useRouter()

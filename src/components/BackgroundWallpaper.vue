@@ -4,8 +4,8 @@
 
 <script setup>
 import { computed } from 'vue'
-import yeguang from '@/assets/yeguang.jpg'
-import xiaguang from '@/assets/xiaguang.jpg'
+import yeguang from '@/assets/optimized/yeguang.webp'
+import xiaguang from '@/assets/optimized/xiaguang.webp'
 
 const props = defineProps({
   imageSrc: { type: String, required: true }

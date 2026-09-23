@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-2 -1.5 28 28" fill="currentColor" aria-hidden="true">
+  <!-- 初绽：三瓣，短而窄（±36°）—— 对应"写了篇笔记" -->
+  <g transform="rotate(-36 12 20.5)">
+    <path d="M12 20.5C9.6 18.2 9 13.6 12 9 15 13.6 14.4 18.2 12 20.5Z"/>
+  </g>
+  <g transform="rotate(36 12 20.5)">
+    <path d="M12 20.5C9.6 18.2 9 13.6 12 9 15 13.6 14.4 18.2 12 20.5Z"/>
+  </g>
+  <path d="M12 20.5C9.6 18.2 9 13.6 12 9 15 13.6 14.4 18.2 12 20.5Z"/>
+</svg>

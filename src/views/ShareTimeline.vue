@@ -15,7 +15,7 @@
 
       <div class="container">
         <!-- 三张堆叠预览 -->
-        <section class="block hidden" :class="{ visible: stackRevealed }">
+        <section class="block">
           <h2 class="section-title">🖼️ 图片分享</h2>
           <div class="stack-wrapper" @click="router.push('/gallery')">
             <div class="stack-card s3"><div class="photo" :style="bg(2)"></div></div>
@@ -26,7 +26,7 @@
         </section>
 
         <!-- 计划 -->
-        <section class="block hidden" :class="{ visible: stackRevealed }">
+        <section class="block">
           <h2 class="section-title">🌱 花束清单</h2>
           <div class="plan-grid">
             <div class="plan-col daily">
@@ -57,7 +57,7 @@
         </section>
 
         <!-- 说说 -->
-        <section class="block hidden" :class="{ visible: stackRevealed }">
+        <section class="block">
           <h2 class="section-title">💬 说说</h2>
 
           <div class="search-area">
@@ -108,7 +108,7 @@
                 <div class="jc-tag">{{ item.tag }}</div>
                 <p class="jc-text">{{ item.text }}</p>
                 <div v-if="item.photoSrcs.length" class="jc-photos" :class="{ wide: expandedId === `${day.date}-${j}` }">
-                  <img v-for="(src, k) in item.photoSrcs" :key="k" :src="src" alt="" loading="lazy" @click.stop="lightbox = src" />
+                  <img v-for="(src, k) in item.photoSrcs" :key="k" :src="src" alt="" loading="lazy" @click.stop="lightbox = item.photoFulls[k]" />
                 </div>
                 <div v-if="expandedId === `${day.date}-${j}`" class="jc-actions">
                   <div class="jc-nav">
@@ -150,7 +150,8 @@ import { useRouter } from 'vue-router'
 import TopBar from '@/components/app/TopBar.vue'
 import MusicDock from '@/components/Player/MusicDock.vue'
 import { gallery, plans, lifeJournal } from '@/data/shares'
-import yaolanBg from '@/assets/yaolan.jpg'
+import yaolanBg from '@/assets/optimized/yaolan.webp'
+import { useReveal } from '@/composables/useReveal'
 
 const router = useRouter()
 function loadChecks(key, len) {
@@ -163,11 +164,11 @@ watch(dailyDone, v => localStorage.setItem('plan-daily', JSON.stringify(v)), { d
 watch(weeklyDone, v => localStorage.setItem('plan-weekly', JSON.stringify(v)), { deep: true })
 const dailyProgress = computed(() => dailyDone.value.filter(Boolean).length)
 const weeklyProgress = computed(() => weeklyDone.value.filter(Boolean).length)
-const stackRevealed = ref(false)
 const lightbox = ref(null)
 const expandedId = ref(null)
 const showBackTop = ref(false)
 const scrollerRef = ref(null)
+const { reveal } = useReveal(scrollerRef)
 const calOpen = ref(false)
 const calYear = ref(2026)
 const calMonth = ref(4)
@@ -290,10 +291,22 @@ function onDocClick(e) {
   if (calOpen.value && !e.target.closest('.cal-wrap')) calOpen.value = false
 }
 
+// 逐条浮现：滚到哪演到哪（repeat 调用是安全的，已演过的会被跳过）
+function runReveal() {
+  reveal('.stack-card', { stagger: 0.12 })
+  reveal('.plan-item', { stagger: 0.06 })
+  reveal('.day-head')
+  reveal('.jcard', { stagger: 0.06 })
+}
+
 onMounted(() => {
-  setTimeout(() => { stackRevealed.value = true }, 400)
   document.addEventListener('click', onDocClick)
+  nextTick(runReveal)
 })
+
+// 搜索 / 月份筛选 / 加载更多会重排时间轴，新出现的条目也要浮现
+watch(visibleJournal, () => nextTick(runReveal))
+
 onUnmounted(() => { document.removeEventListener('click', onDocClick) })
 
 function bg(i) {
@@ -319,8 +332,6 @@ function bg(i) {
 
 /* ---- 主体 ---- */
 .container { max-width: 720px; width: min(720px, calc(100vw - 48px)); margin: 0 auto; padding: 50px 0 40px; }
-.block.hidden { opacity: 0; transform: translateY(20px); transition: opacity 0.6s ease, transform 0.6s ease; }
-.block.visible { opacity: 1; transform: translateY(0); }
 .block { margin-top: 40px; }
 .section-title { font-weight: 400; letter-spacing: 2px; font-size: 1.05rem; color: var(--text-dark); text-align: left; margin-bottom: 16px; }
 
@@ -403,7 +414,7 @@ function bg(i) {
 .day-label { font-size: 0.82rem; color: var(--text-dark); letter-spacing: 3px; font-weight: 400; }
 .day-cards { display: flex; flex-direction: column; gap: 10px; }
 
-.jcard { padding: 16px 18px; border-radius: 14px; background: var(--card-bg); border: 1px solid rgba(0,0,0,0.04); box-shadow: var(--shadow-card); transition: 0.2s ease; cursor: pointer; }
+.jcard { padding: 16px 18px; border-radius: 14px; background: var(--card-bg); border: 1px solid rgba(0,0,0,0.04); box-shadow: var(--shadow-card); transition: box-shadow 0.2s ease, border-color 0.2s ease; cursor: pointer; }
 .jcard:hover { box-shadow: var(--shadow-card-hover); }
 .jcard.expanded { border-color: rgba(184,212,184,0.4); box-shadow: var(--shadow-card-hover); }
 

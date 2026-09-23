@@ -2,8 +2,10 @@ import { Marked } from 'marked'
 
 const marked = new Marked()
 
-// 文章卡片图：saiset/think/ 下按编号匹配（photo: '1' → think/1.png）
-const thinkModules = import.meta.glob('@/assets/saiset/think/*.{jpg,jpeg,png,gif,JPG,JPEG,PNG,webp}', { eager: true, import: 'default' })
+// 文章卡片图：optimized/saiset/think/ 下按编号匹配（photo: '1' → think/1.webp）
+// 缩略图由 scripts/optimize-images.mjs 生成；此处无灯箱，不需要原图
+// 注意：写成 *.webp 而不是 *.{webp} —— Vite 的 glob 不支持单元素花括号，会静默返回空
+const thinkModules = import.meta.glob('@/assets/optimized/saiset/think/*.webp', { eager: true, import: 'default' })
 function resolveThinkPhoto(name) {
   if (!name) return null
   for (const [k, v] of Object.entries(thinkModules)) {
@@ -41,7 +43,8 @@ function extractExcerpt(md) {
   return clean.slice(0, 120)
 }
 
-function countChars(md) {
+// 导出给「站点统计」卡复用，免得两处算法不一致、算出两个数
+export function countChars(md) {
   return md
     .replace(/^#{1,6}\s+.*$/gm, '')
     .replace(/```[\s\S]*?```/g, '')

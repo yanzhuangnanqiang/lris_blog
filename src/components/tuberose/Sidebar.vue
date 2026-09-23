@@ -90,6 +90,48 @@ function onSwipeEnd(e) {
 }
 .sidebar-inner::-webkit-scrollbar { display: none; }
 
+/* ===== 进入动画 =====
+   只在挂载时跑一次（切路由会重建 Sidebar），之后收起/展开照旧走 .sidebar 的 transform 过渡。
+
+   整块这层必须挂在 .sidebar-inner 上，不能挂 .sidebar ——
+   .sidebar 自己带 backdrop-filter，而 opacity < 1 会新建 backdrop root，
+   模糊会整段消失、动画结束再跳回来。
+   用独立的 translate 属性而不是 transform，免得和 .sidebar 的 translateX 收起态互相覆盖。 */
+.sidebar-inner {
+  animation: sideIn 0.45s cubic-bezier(0.22, 1, 0.36, 1) backwards;
+}
+@keyframes sideIn {
+  from { opacity: 0; translate: -24px 0; }
+  to   { opacity: 1; translate: 0 0; }
+}
+
+/* 内部各块只做位移，透明度交给上面那层 ——
+   两层都淡的话是相乘的，动画中段会整片发闷。
+   排除 .note-list：卡片是它的子元素，父子都位移会让位移翻倍。 */
+.sidebar-inner > *:not(.note-list) {
+  animation: sideItemIn 0.45s cubic-bezier(0.22, 1, 0.36, 1) backwards;
+}
+.sidebar-inner :deep(.note-card) {
+  animation: sideItemIn 0.45s cubic-bezier(0.22, 1, 0.36, 1) backwards;
+}
+@keyframes sideItemIn {
+  from { translate: 0 12px; }
+  to   { translate: 0 0; }
+}
+
+/* 延迟阶梯。用类名定位而不是 nth-child ——
+   SidebarIntro 是 v-if，它一出现所有 nth-child 索引就整体错位一格。 */
+.sidebar-inner > .top-row    { animation-delay: 0.04s; }
+.sidebar-inner > .header     { animation-delay: 0.10s; }
+.sidebar-inner > .nav        { animation-delay: 0.16s; }
+.sidebar-inner > .list-hint  { animation-delay: 0.22s; }
+.sidebar-inner > .intro      { animation-delay: 0.22s; }
+.sidebar-inner :deep(.note-card:nth-child(1)) { animation-delay: 0.28s; }
+.sidebar-inner :deep(.note-card:nth-child(2)) { animation-delay: 0.34s; }
+.sidebar-inner :deep(.note-card:nth-child(3)) { animation-delay: 0.40s; }
+.sidebar-inner :deep(.note-card:nth-child(4)) { animation-delay: 0.46s; }
+.sidebar-inner > .footer     { animation-delay: 0.52s; }
+
 .top-row {
   display: flex;
   justify-content: flex-end;

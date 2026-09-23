@@ -73,4 +73,12 @@ defineEmits(['random'])
   color: #fff;
   transform: translateY(-1px);
 }
+
+/* 面板靠绝对定位居中，宽度由内容撑开 —— 窄屏下 max-width: 400px 的文案会顶出屏幕 */
+@media (max-width: 540px) {
+  .welcome { width: calc(100% - 40px); }
+  .desc { max-width: 100%; }
+  .main-title { font-size: 2.2rem; letter-spacing: 5px; }
+  .sub-title { font-size: 1rem; }
+}
 </style>

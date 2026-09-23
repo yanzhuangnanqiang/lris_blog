@@ -1,3 +1,4 @@
+// 原图 —— 只在灯箱看大图时用
 import p1 from '@/assets/saiset/gallery/1.png'
 import p2 from '@/assets/saiset/gallery/2.png'
 import p3 from '@/assets/saiset/gallery/3.png'
@@ -15,13 +16,34 @@ import p14 from '@/assets/saiset/gallery/14.jpeg'
 import p15 from '@/assets/saiset/gallery/15.jpg'
 import p16 from '@/assets/saiset/gallery/16.jpg'
 
+// 缩略图 —— 网格和封面用（由 scripts/optimize-images.mjs 生成）
+import t1 from '@/assets/optimized/saiset/gallery/1.webp'
+import t2 from '@/assets/optimized/saiset/gallery/2.webp'
+import t3 from '@/assets/optimized/saiset/gallery/3.webp'
+import t4 from '@/assets/optimized/saiset/gallery/4.webp'
+import t5 from '@/assets/optimized/saiset/gallery/5.webp'
+import t6 from '@/assets/optimized/saiset/gallery/6.webp'
+import t7 from '@/assets/optimized/saiset/gallery/7.webp'
+import t8 from '@/assets/optimized/saiset/gallery/8.webp'
+import t9 from '@/assets/optimized/saiset/gallery/9.webp'
+import t10 from '@/assets/optimized/saiset/gallery/10.webp'
+import t11 from '@/assets/optimized/saiset/gallery/11.webp'
+import t12 from '@/assets/optimized/saiset/gallery/12.webp'
+import t13 from '@/assets/optimized/saiset/gallery/13.webp'
+import t14 from '@/assets/optimized/saiset/gallery/14.webp'
+import t15 from '@/assets/optimized/saiset/gallery/15.webp'
+import t16 from '@/assets/optimized/saiset/gallery/16.webp'
 
-// 照片注册表 — 加了新照片在这里加一行
+
+// 照片注册表 — 加了新照片在这里加一行（原图 + 缩略图）
 const photoMap = {
-  '1': p1, '2': p2, '3': p3, '4': p4, '5': p5,
-  '6': p6, '7': p7, '8': p8, '9': p9, '10': p10, '11': p11,
-  '12': p12, '13': p13, '14': p14, '15': p15, '16': p16,
- 
+  '1': { full: p1, thumb: t1 },   '2': { full: p2, thumb: t2 },   '3': { full: p3, thumb: t3 },
+  '4': { full: p4, thumb: t4 },   '5': { full: p5, thumb: t5 },   '6': { full: p6, thumb: t6 },
+  '7': { full: p7, thumb: t7 },   '8': { full: p8, thumb: t8 },   '9': { full: p9, thumb: t9 },
+  '10': { full: p10, thumb: t10 }, '11': { full: p11, thumb: t11 },
+  '12': { full: p12, thumb: t12 }, '13': { full: p13, thumb: t13 },
+  '14': { full: p14, thumb: t14 }, '15': { full: p15, thumb: t15 },
+  '16': { full: p16, thumb: t16 },
 }
 
 /**
@@ -49,8 +71,13 @@ const sceneCards = [
   { photo: '16', text: '远方很远，但抬头就能望见。',                    from: '',       side: 'left' },
 ]
 
-/** 把 photo 名转成真实图片路径 */
+/** 原图路径 —— 只在灯箱看大图时用 */
 export function resolvePhotoSrc(name) {
-  return photoMap[name] ?? photoMap['1']
+  return (photoMap[name] ?? photoMap['1']).full
+}
+
+/** 缩略图路径 —— 网格、封面用 */
+export function resolvePhotoThumb(name) {
+  return (photoMap[name] ?? photoMap['1']).thumb
 }
 

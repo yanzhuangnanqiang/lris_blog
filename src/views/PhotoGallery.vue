@@ -40,7 +40,7 @@
     <!-- 灯箱 -->
     <div v-if="lightbox" class="lightbox" @click="lightbox = null">
       <div class="lightbox-inner" @click.stop>
-        <img :src="lightbox.src" :alt="lightbox.text" />
+        <img :src="lightbox.full" :alt="lightbox.text" />
         <p>{{ lightbox.text }}</p>
         <button class="lb-close" @click="lightbox = null">✕</button>
       </div>

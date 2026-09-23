@@ -149,9 +149,9 @@
 import { ref, computed, onMounted } from 'vue'
 import TopBar from '@/components/app/TopBar.vue'
 import MusicDock from '@/components/Player/MusicDock.vue'
-import aboutBg from '@/assets/saiset/竖屏/2.jpg'
+import aboutBg from '@/assets/optimized/saiset/竖屏/2.webp'
 
-import avatarImg from '@/assets/avatar.jpg'
+import avatarImg from '@/assets/optimized/avatar.webp'
 const avatar = avatarImg
 
 const scrollerRef = ref(null)

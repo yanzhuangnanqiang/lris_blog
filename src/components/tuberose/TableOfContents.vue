@@ -14,7 +14,7 @@
 </template>
 
 <script setup>
-import { ref, watch, onMounted, onUnmounted } from 'vue'
+import { ref, watch, nextTick, onMounted, onUnmounted } from 'vue'
 
 const props = defineProps({ headings: { type: Array, default: () => [] } })
 
@@ -23,37 +23,26 @@ const mobileOpen = ref(false)
 
 let observer = null
 
-function ensureIds() {
-  const els = document.querySelectorAll('.rp-body h2, .rp-body h3')
-  props.headings.forEach(h => {
-    for (const el of els) {
-      if (el.textContent.trim() === h.text && el.id !== h.id) {
-        el.id = h.id
-        break
-      }
-    }
-  })
-}
-
+// 标题 id 已由 loadNotes 在渲染时写好，这里不再需要事后补写。
 function setupObserver() {
   if (observer) observer.disconnect()
-  ensureIds()
   const els = document.querySelectorAll('.rp-body h2[id], .rp-body h3[id]')
   if (!els.length) return
 
   observer = new IntersectionObserver((entries) => {
     const visible = entries.filter(e => e.isIntersecting)
-    if (visible.length) {
-      activeId.value = visible[0].target.id
-      const panel = document.querySelector('.toc-panel')
-      const link = panel?.querySelector('li.active')
-      if (link) {
-        const pRect = panel.getBoundingClientRect()
-        const lRect = link.getBoundingClientRect()
-        const margin = pRect.height * 0.1
-        if (lRect.top < pRect.top + margin || lRect.bottom > pRect.bottom - margin) {
-          panel.scrollBy({ top: lRect.top - pRect.top - margin, behavior: 'smooth' })
-        }
+    if (!visible.length) return
+    // entries 的顺序不保证自上而下，按实际位置取最靠上的那个
+    const top = visible.reduce((a, b) => a.boundingClientRect.top <= b.boundingClientRect.top ? a : b)
+    activeId.value = top.target.id
+    const panel = document.querySelector('.toc-panel')
+    const link = panel?.querySelector('li.active')
+    if (link) {
+      const pRect = panel.getBoundingClientRect()
+      const lRect = link.getBoundingClientRect()
+      const margin = pRect.height * 0.1
+      if (lRect.top < pRect.top + margin || lRect.bottom > pRect.bottom - margin) {
+        panel.scrollBy({ top: lRect.top - pRect.top - margin, behavior: 'smooth' })
       }
     }
   }, { root: document.querySelector('.main-content'), rootMargin: '-14% 0px -42% 0px', threshold: 0 })
@@ -61,11 +50,8 @@ function setupObserver() {
   els.forEach(el => observer.observe(el))
 }
 
-watch(() => props.headings, () => {
-  setTimeout(setupObserver, 100)
-}, { immediate: false })
-
-onMounted(() => { if (props.headings.length) setTimeout(setupObserver, 100) })
+watch(() => props.headings, () => { nextTick(setupObserver) })
+onMounted(() => { if (props.headings.length) nextTick(setupObserver) })
 onUnmounted(() => { if (observer) observer.disconnect() })
 
 function scrollToHeading(id) {
@@ -80,13 +66,7 @@ function scrollToHeading(id) {
 
 function onClick(id) {
   mobileOpen.value = false
-  const el = document.getElementById(id)
-  if (el) {
-    scrollToHeading(id)
-  } else {
-    ensureIds()
-    setTimeout(() => scrollToHeading(id), 50)
-  }
+  scrollToHeading(id)
 }
 
 function close() { mobileOpen.value = false }
@@ -147,9 +127,8 @@ defineExpose({ open, close })
   .toc-panel {
     width: 260px;
     height: 100%;
-    background: rgba(25,35,45,0.95);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
+    /* 浮层态直接做实色：alpha 本来就有 0.95，模糊看不出来，去掉省下每帧重算 */
+    background: rgb(25,35,45);
     border-left: 1px solid rgba(255,255,255,0.1);
     padding: 24px 20px;
     overflow-y: auto;
@@ -178,7 +157,7 @@ defineExpose({ open, close })
   display: block;
   position: relative;
   padding: 7px 10px 7px 16px;
-  font-size: 0.8rem;
+  font-size: 0.86rem;
   font-weight: 400;
   color: rgba(255,255,255,0.48);
   text-decoration: none;
@@ -205,7 +184,7 @@ defineExpose({ open, close })
 }
 
 .indent a {
-  font-size: 0.76rem;
+  font-size: 0.82rem;
 }
 
 .indent a::before {
@@ -234,7 +213,7 @@ defineExpose({ open, close })
 }
 
 .toc-empty {
-  font-size: 0.78rem;
+  font-size: 0.84rem;
   color: rgba(255,255,255,0.18);
   margin: 0;
 }

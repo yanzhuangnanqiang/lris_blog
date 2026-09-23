@@ -35,10 +35,10 @@
         </div>
       </div>
 
-      <section v-if="!searchActive" class="calendar-section" :style="{ opacity: 0.35 + Math.min(0.65, Math.max(0, (scrollPct - 0.05) * 3)) }">
+      <section v-if="!searchActive" class="calendar-section" :class="{ bloomed }" :style="{ opacity: 0.35 + Math.min(0.65, Math.max(0, (scrollPct - 0.05) * 3)) }">
         <div class="cal-header">
           <span class="cal-label">活动日历</span>
-          <span class="cal-count">{{ calendarStats.streak }} 天 · {{ calendarStats.total }} 次</span>
+          <span class="cal-count">{{ calendarStats.activeDays }} 天有提交 · 共 {{ calendarStats.total }} 次</span>
         </div>
         <div class="cal-month-labels">
           <span v-for="i in weeksCount" :key="'ml'+i" class="cal-ml" :class="{ empty: !monthLabelByWeek[i-1] }">{{ monthLabelByWeek[i-1] || '' }}</span>
@@ -50,7 +50,7 @@
             <span style="grid-row:6">Fri</span>
           </div>
           <div class="cal-grid">
-            <div v-for="(day, idx) in calendarCells" :key="idx" class="cal-day" :class="dayClass(day)" :data-tip="day ? `${day.date} · ${day.count} 次` : ''"></div>
+            <div v-for="(cell, idx) in calendarCells" :key="idx" class="cal-day" :class="dayClass(cell)" :style="cellStyle(cell)" :data-tip="cellTip(cell)"></div>
           </div>
         </div>
         <div class="cal-legend">
@@ -62,6 +62,7 @@
           <span class="leg-box l4"></span>
           <span class="leg-label">More</span>
         </div>
+        <p v-if="contribError" class="cal-error">暂时取不到提交数据</p>
       </section>
 
       <div class="container" :style="{ opacity: searchActive ? 1 : Math.min(1, Math.max(0, (scrollPct - 0.1) * 3)) }">
@@ -101,7 +102,8 @@
 import { computed, nextTick, onMounted, ref, watch } from 'vue'
 import TopBar from '@/components/app/TopBar.vue'
 import MusicDock from '@/components/Player/MusicDock.vue'
-import xinliBg from '@/assets/xinli.png'
+import xinliBg from '@/assets/optimized/xinli.webp'
+import { loadContributions, irisColorOf } from '@/data/contributions'
 
 const repos = ref([])
 const loading = ref(true)
@@ -184,6 +186,8 @@ function onScroll() {
   if (!el) return
   const maxScroll = el.scrollHeight - el.clientHeight
   scrollPct.value = maxScroll > 0 ? Math.min(1, el.scrollTop / Math.min(maxScroll, window.innerHeight * 1.2)) : 0
+  // 日历区开始可见 → 花开（只触发一次）
+  if (!bloomed.value && scrollPct.value > 0.25) bloomed.value = true
   // 下滑超一屏 或 手动滚回顶部 → 退出搜索模式
   if (searchActive.value && !scrollingByCode.value) {
     if (el.scrollTop < 20 || el.scrollTop > window.innerHeight * 1.2) {
@@ -193,9 +197,10 @@ function onScroll() {
 }
 
 const weeksCount = 53
-const calendarWeeks = ref([])
 const calendarCells = ref([])
-const calendarStats = ref({ streak: 0, total: 0 })
+const calendarStats = ref({ activeDays: 0, total: 0 })
+const contribError = ref(false)           // 拉不到数据时给个提示，别静默留一片空白
+const bloomed = ref(false)                // 滚到日历区后触发花开
 const calendarMonths = computed(() => {
   const names = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
   const map = new Map()
@@ -223,43 +228,41 @@ const monthLabelByWeek = computed(() => {
   return map
 })
 
-function buildCalendar(contributions, totalFromApi) {
+/** 本地日期字符串。不能用 toISOString —— 本地 0 点转成 UTC 会倒推一天 */
+function ymd(d) {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+}
+
+/** 把贡献数据铺满 53 周 */
+function buildCalendar(days) {
   const now = new Date(); now.setHours(0,0,0,0)
   const daysCount = weeksCount * 7
   const end = new Date(now); end.setDate(end.getDate() + (6 - end.getDay())); end.setHours(0,0,0,0)
   const start = new Date(end); start.setDate(end.getDate() - (daysCount - 1)); start.setHours(0,0,0,0)
-  const map = {}
-  contributions.forEach(c => { map[c.date] = c.count })
+
+  const map = new Map(days.map(d => [d.date, d]))
   const cells = []
-  const weeks = []
-  let cursor = new Date(start)
-  for (let w = 0; w < weeksCount; w++) {
-    const week = []
-    for (let i = 0; i < 7; i++) {
-      const key = cursor.toISOString().slice(0, 10)
-      const cell = { date: key, count: map[key] || 0 }
-      week.push(cell)
-      cells.push(cell)
-      cursor.setDate(cursor.getDate() + 1)
-    }
-    weeks.push(week)
+  let bloomOrder = 0
+  const cursor = new Date(start)
+  for (let i = 0; i < daysCount; i++) {
+    const date = ymd(cursor)
+    const day = map.get(date) || null
+    // 花开次序按时间先后（不是数组下标），这样花会一朵接一朵地开
+    cells.push({ date, day, order: day ? bloomOrder++ : -1 })
+    cursor.setDate(cursor.getDate() + 1)
   }
-  let streak = 0
-  for (let i = 0; ; i++) {
-    const t = new Date(now); t.setDate(now.getDate() - i)
-    if ((map[t.toISOString().slice(0, 10)] || 0) > 0) streak++; else break
-  }
-  calendarWeeks.value = weeks
   calendarCells.value = cells
-  calendarStats.value = {
-    streak,
-    total: typeof totalFromApi === 'number' ? totalFromApi : contributions.reduce((s, c) => s + c.count, 0),
-  }
 }
-function dayClass(day) {
-  if (!day || !day.count) return 'empty'
-  if (day.count <= 1) return 'l1'; if (day.count <= 3) return 'l2'; if (day.count <= 6) return 'l3'
-  return 'l4'
+
+function dayClass(cell) {
+  return cell.day ? 'l' + cell.day.level : 'empty'
+}
+/** 每朵的颜色。颜色是装饰性的 —— 当天提交了几次由「开了多大」表示 */
+function cellStyle(cell) {
+  return cell.day ? { '--iris': irisColorOf(cell.date), '--i': cell.order } : null
+}
+function cellTip(cell) {
+  return cell.day ? `${cell.date} · ${cell.day.count} 次提交` : ''
 }
 
 async function fetchWithTimeout(url, timeout = 8000) {
@@ -285,17 +288,17 @@ onMounted(async () => {
     sessionStorage.setItem('projectRepos', JSON.stringify(repos.value))
   } catch (e) { if (!repos.value.length) error.value = e?.name === 'AbortError' ? '请求超时' : (e?.message || String(e)) }
   finally { loading.value = false }
+
+  // 花田用的贡献数据。失败不抛给用户看栈，只在日历下留一行提示
   try {
-    const cres = await fetchWithTimeout('https://github-contributions-api.deno.dev/yanzhuangnanqiang.json')
-    if (cres.ok) {
-      const json = await cres.json()
-      let raw = json.contributions || json
-      if (Array.isArray(raw[0])) raw = raw.flat()
-      const contribs = raw.map(c => ({ date: c.date, count: c.contributionCount || c.count || 0 }))
-      buildCalendar(contribs, json.totalContributions)
-    }
-  } catch (e) { console.error('contrib fetch error:', e) }
+    const { days, total, activeDays } = await loadContributions()
+    buildCalendar(days)
+    calendarStats.value = { activeDays, total }
+  } catch {
+    contribError.value = true
+  }
 })
+// 日历数据来自站内，setup 阶段就铺好了 —— 这里不再有任何外部请求
 
 document.addEventListener('visibilitychange', () => {
   if (document.visibilityState === 'visible') pickedRepo.value = null
@@ -345,23 +348,64 @@ document.addEventListener('visibilitychange', () => {
 .cal-day-labels { display: grid; grid-template-rows: repeat(7, var(--cell)); gap: var(--gap); flex-shrink: 0; }
 .cal-day-labels span { width: var(--cell); height: var(--cell); font-size: 0.55rem; color: rgba(255,255,255,0.35); display: flex; align-items: center; line-height: 1; }
 .cal-grid { display: grid; grid-template-columns: repeat(53, var(--cell)); grid-template-rows: repeat(7, var(--cell)); grid-auto-flow: column; gap: var(--gap); justify-content: center; }
-.cal-day { border-radius: 2px; position: relative; }
+.cal-day { position: relative; }
 .cal-day::after { content: attr(data-tip); position: absolute; left: 50%; bottom: calc(100% + 8px); transform: translateX(-50%); white-space: nowrap; font-size: 0.72rem; color: #fff; background: rgba(30,20,50,0.85); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); padding: 4px 10px; border-radius: 6px; pointer-events: none; opacity: 0; transition: opacity 0.15s ease; transition-delay: 0.6s; z-index: 10; letter-spacing: 0.5px; }
 .cal-day:hover::after { opacity: 1; }
-.cal-day.empty { background: rgba(255,255,255,0.08); }
-.cal-day.l1 { background: rgba(91,63,211,0.3); }
-.cal-day.l2 { background: rgba(91,63,211,0.55); }
-.cal-day.l3 { background: rgba(91,63,211,0.75); }
-.cal-day.l4 { background: #5B3FD3; }
+/* 有产出的日子 = 一朵鸢尾。
+   花画在 ::before 上，不画在 .cal-day 本身 —— 因为 mask 会把元素连同它的
+   ::after（悬停提示框）一起裁掉，那样提示永远看不见。::before / ::after
+   是两个独立伪元素，mask 掉一个不影响另一个。 */
+.cal-day.l1::before, .cal-day.l2::before, .cal-day.l3::before, .cal-day.l4::before,
+.leg-box.l1::before, .leg-box.l2::before, .leg-box.l3::before, .leg-box.l4::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-color: var(--iris);
+  -webkit-mask-repeat: no-repeat; mask-repeat: no-repeat;
+  -webkit-mask-position: center; mask-position: center;
+  -webkit-mask-size: var(--bloom-size); mask-size: var(--bloom-size);
+}
+/* 尺寸梯度拉得很开是刻意的：相邻两档在 13px 的格子里必须能看出差别。
+   末档超过 100% 是有意的 —— 花开满时可以稍微溢到格子的间隙里。
+   实际画出来的花约为 mask 尺寸的 94%（SVG 留了防裁切的边距）。
+   L1 起点不低，因为一年里大部分日子只提交几次，那些花不能被淹掉。 */
+.cal-day.l1::before, .leg-box.l1::before { --bloom-size: 48%;  -webkit-mask-image: url('../assets/iris-1.svg'); mask-image: url('../assets/iris-1.svg'); }
+.cal-day.l2::before, .leg-box.l2::before { --bloom-size: 70%;  -webkit-mask-image: url('../assets/iris-2.svg'); mask-image: url('../assets/iris-2.svg'); }
+.cal-day.l3::before, .leg-box.l3::before { --bloom-size: 92%;  -webkit-mask-image: url('../assets/iris-3.svg'); mask-image: url('../assets/iris-3.svg'); }
+.cal-day.l4::before, .leg-box.l4::before { --bloom-size: 118%; -webkit-mask-image: url('../assets/iris-4.svg'); mask-image: url('../assets/iris-4.svg'); }
 
-.cal-legend { display: flex; align-items: center; justify-content: flex-end; gap: 3px; margin-top: 8px; }
+/* 空日不弹提示框 —— 否则 data-tip 是空串，会渲染成一个空方块 */
+.cal-day.empty::after { content: none; }
+
+/* 空日：一颗几乎看不见的土点，而不是一个方块 —— 田野本来就该有空地 */
+.cal-day.empty::before, .leg-box.empty::before {
+  content: '';
+  position: absolute; left: 50%; top: 50%;
+  width: 2px; height: 2px; margin: -1px 0 0 -1px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.22);
+}
+
+/* 滚到日历区后，花一朵接一朵地开（--i 是该朵在全年中的次序） */
+@keyframes bloom {
+  from { opacity: 0; transform: scale(0.2); }
+  to   { opacity: 1; transform: scale(1); }
+}
+/* 动的是 ::before（花本身），不是格子 —— 格子上的 transform 会拖累提示框。
+   backwards 只在开演前压住初始态，跑完就把 transform 还回去。 */
+.calendar-section.bloomed .cal-day:not(.empty)::before {
+  animation: bloom 0.7s cubic-bezier(0.22, 1, 0.36, 1) backwards;
+  /* 上限封在 18：一年可能有三四十朵花，不封顶最后一朵要等两秒多 */
+  animation-delay: calc(min(var(--i, 0), 18) * 45ms);
+}
+
+/* --iris 给图例里的四朵花用；图例讲的是「开了多大」，所以四朵同色 */
+.cal-legend { --iris: #8B6FE8; display: flex; align-items: center; justify-content: flex-end; gap: 3px; margin-top: 8px; }
 .leg-label { font-size: 0.6rem; color: rgba(255,255,255,0.4); letter-spacing: 1px; }
-.leg-box { width: var(--cell); height: var(--cell); border-radius: 2px; }
-.leg-box.empty { background: rgba(255,255,255,0.08); }
-.leg-box.l1 { background: rgba(91,63,211,0.3); }
-.leg-box.l2 { background: rgba(91,63,211,0.55); }
-.leg-box.l3 { background: rgba(91,63,211,0.75); }
-.leg-box.l4 { background: #5B3FD3; }
+.leg-box { width: var(--cell); height: var(--cell); position: relative; }
+
+/* 拉不到数据时给一句话，别让人对着一片空白猜是不是坏了 */
+.cal-error { margin: 6px 0 0; text-align: right; font-size: 0.72rem; color: rgba(255,255,255,0.45); letter-spacing: 1px; }
 
 .loading-state, .error-state { text-align: center; padding: 48px 0; color: #444; letter-spacing: 2px; }
 .error-state a { display: inline-block; margin-top: 10px; color: #5B3FD3; }

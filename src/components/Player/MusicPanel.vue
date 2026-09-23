@@ -1,74 +1,109 @@
+<!--
+  音乐播放器面板（全站共用）。
+  排版：▌音乐 + 圆形旋转封面 + 歌名歌手 + 细进度条 + 控制键 + 可折叠歌单。
+
+  MusicDock 用 v-show 挂着它，点圆盘展开；closable 给出 ✕ 关掉面板。
+  笔记页也复用这一个组件（阅读态左列 / 列表态胶囊），全站只有一份实现。
+-->
 <template>
-  <div class="panel" :class="{ playing: store.playing }">
-    <div class="head">
-      <div class="meta">
-        <div class="title">{{ store.current.title }}</div>
-        <div class="artist">
-          <span class="artist-name" :style="{ color: artistColor }">{{ store.current.artist }}</span>
-          <span class="sep">·</span>
-          <span class="tag">纯音乐</span>
+  <WidgetCard class="mp-card" title="音乐">
+    <template v-if="closable" #action>
+      <button class="mp-x" aria-label="收起播放器" @click="emit('close')">✕</button>
+    </template>
+
+    <div class="now">
+      <div class="cover">
+        <svg class="cover-note" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+          <path d="M12 3v10.55A4 4 0 1 0 14 17V7h4V3h-6z" />
+        </svg>
+        <img
+          class="cover-img"
+          :class="{ on: coverOk, spinning: store.playing }"
+          :src="coverSrc"
+          alt=""
+          @load="coverOk = true"
+          @error="coverOk = false"
+        />
+      </div>
+
+      <div class="info">
+        <h4 class="name" :title="store.current.title">{{ store.current.title }}</h4>
+        <p class="artist">{{ store.current.artist }}</p>
+        <div class="meta">
+          <span class="times">{{ store.fmt(store.currentTime) }} / {{ store.fmt(store.duration) }}</span>
+          <div class="vol">
+            <button class="vol-btn" :aria-label="store.muted ? '取消静音' : '静音'" @click="store.toggleMute">
+              <img :src="volIcon" alt="" />
+            </button>
+            <input
+              class="vol-bar"
+              type="range" min="0" max="1" step="0.05"
+              :value="store.volume"
+              aria-label="音量"
+              @input="store.volume = $event.target.value"
+            />
+          </div>
         </div>
       </div>
-      <button class="x" @click="$emit('close')">✕</button>
     </div>
 
-    <div class="spectrum" :class="{ active: store.playing }">
-      <span v-for="n in 46" :key="n" class="bar" :style="{ height: store.bars[n-1] + 'px' }"></span>
-    </div>
-
-    <div class="progress" @mouseenter="showTotal = true" @mouseleave="showTotal = false">
-      <span class="t">{{ store.fmt(store.currentTime) }}</span>
-      <input type="range" min="0" :max="store.duration || 100" step="0.1" :value="store.seek" @input="store.onSeek($event.target.value)" class="seek-bar" />
-      <span class="t total" :class="{ on: showTotal }">{{ store.fmt(store.duration) }}</span>
-    </div>
+    <input
+      class="seek"
+      type="range" min="0" :max="store.duration || 100" step="0.1"
+      :value="store.seek"
+      aria-label="播放进度"
+      @input="store.onSeek($event.target.value)"
+    />
 
     <div class="controls">
-      <button class="ctrl" @click="like">
-        <img :src="heartIcon" alt="" />
-      </button>
-      <button class="ctrl" @click="store.prev">
-        <img :src="skipBack" alt="" />
-      </button>
-      <button class="ctrl play" @click="toggle">
-        <img :src="store.playing ? pauseIcon : playIcon" alt="" />
-      </button>
-      <button class="ctrl" @click="store.next">
-        <img :src="skipForward" alt="" />
-      </button>
-      <button class="ctrl" :class="{ on: store.loop }" @click="store.loop = !store.loop">
+      <button
+        class="ctrl" :class="{ on: store.loop }"
+        :aria-label="store.loop ? '单曲循环' : '列表循环'" :aria-pressed="store.loop"
+        @click="store.loop = !store.loop"
+      >
         <img :src="store.loop ? loopOnIcon : loopOffIcon" alt="" />
       </button>
-    </div>
-
-    <div class="float-hearts">
-      <span v-for="h in hearts" :key="h.id" class="fh" :style="h.style">{{ h.emoji }}</span>
-    </div>
-
-    <div class="volume">
-      <button class="vol-btn" @click="store.toggleMute">
-        <img :src="volIcon" alt="" />
+      <button class="ctrl" aria-label="上一首" @click="store.prev">
+        <img :src="skipBack" alt="" />
       </button>
-      <input type="range" min="0" max="1" step="0.05" :value="store.volume" @input="store.volume = $event.target.value" class="vol-bar" />
-      <span class="vol-spacer"></span>
-    </div>
-
-    <div class="playlist" ref="playlistRef">
+      <button class="ctrl play" :aria-label="store.playing ? '暂停' : '播放'" @click="toggle">
+        <img :src="store.playing ? pauseIcon : playIcon" alt="" />
+      </button>
+      <button class="ctrl" aria-label="下一首" @click="store.next">
+        <img :src="skipForward" alt="" />
+      </button>
       <button
-        v-for="(t, i) in store.tracks"
-        :key="t.file"
-        class="pl-item"
-        :class="{ active: i === store.idx }"
-        @click="store.select(i)"
+        class="ctrl" :class="{ on: listOpen }"
+        aria-label="播放列表" :aria-expanded="listOpen"
+        @click="listOpen = !listOpen"
       >
-        <span class="pl-idx">{{ i + 1 }}</span>
-        <span class="pl-title">{{ t.title }}</span>
+        <img :src="listIcon" alt="" />
       </button>
     </div>
-  </div>
+
+    <!-- 歌单抽屉：grid-rows 0fr → 1fr，靠行高插值展开，不碰 height -->
+    <div class="drawer" :class="{ open: listOpen }">
+      <div class="drawer-clip">
+        <div class="playlist">
+          <button
+            v-for="(t, i) in store.tracks"
+            :key="t.file"
+            class="pl-item"
+            :class="{ active: i === store.idx }"
+            @click="store.select(i)"
+          >
+            <span class="pl-idx">{{ i + 1 }}</span>
+            <span class="pl-title">{{ t.title }}</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </WidgetCard>
 </template>
 
 <script setup>
-import { computed, onMounted, ref, watch, nextTick } from 'vue'
+import { computed, onMounted, ref } from 'vue'
+import WidgetCard from '@/components/app/WidgetCard.vue'
 import { useMusicStore } from '@/stores/music'
 
 import skipBack from '@/assets/skip-back.svg'
@@ -77,270 +112,240 @@ import loopOnIcon from '@/assets/refresh-cw.svg'
 import loopOffIcon from '@/assets/refresh-cw-off.svg'
 import playIcon from '@/assets/play.svg'
 import pauseIcon from '@/assets/pause.svg'
-import heartIcon from '@/assets/heart.svg'
+import listIcon from '@/assets/list.svg'
 import volHigh from '@/assets/volume-2.svg'
 import volLow from '@/assets/volume-1.svg'
 import volMuted from '@/assets/volume-off.svg'
+// 4 首歌还没配封面，先用这张黑胶图兜底
+import coverDefault from '@/assets/optimized/liushenji.webp'
 
-const emit = defineEmits(['play-state', 'close'])
-const store = useMusicStore()
-
-const showTotal = ref(false)
-const playlistRef = ref(null)
-
-// 切歌时，把当前曲目自动滚进视野
-watch(() => store.idx, () => {
-  nextTick(() => {
-    playlistRef.value?.querySelector('.pl-item.active')?.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
-  })
+const props = defineProps({
+  // 面板形态（MusicDock 里）需要能关掉；笔记页左列常开，不要 ✕
+  closable: { type: Boolean, default: false },
 })
+const emit = defineEmits(['close', 'play-state'])
 
-const artistPalette = {
-  'EP': '#9a8bb8',
-  '赛琳娜': '#a08dba',
-}
-const artistColor = computed(() => artistPalette[store.current.artist] || '#9a8bb8')
+const store = useMusicStore()
+const listOpen = ref(false)
+const coverOk = ref(false)
+
+const coverSrc = computed(() => store.current.cover || coverDefault)
 
 const volIcon = computed(() => {
-  if (store.muted || store.volume === 0) return volMuted
-  if (store.volume < 0.5) return volLow
+  if (store.muted || Number(store.volume) === 0) return volMuted
+  if (Number(store.volume) < 0.5) return volLow
   return volHigh
 })
-
-let heartId = 0
-const hearts = ref([])
-const heartEmojis = ['💚', '💛', '🌸', '✨', '💕', '🌿']
-
-function spawnHeart() {
-  const id = ++heartId
-  const emoji = heartEmojis[Math.floor(Math.random() * heartEmojis.length)]
-  const x = (Math.random() - 0.5) * 60
-  hearts.value.push({ id, emoji, style: { left: `calc(50% + ${x}px)` } })
-  setTimeout(() => { hearts.value = hearts.value.filter(h => h.id !== id) }, 1200)
-}
-
-function like() {
-  for (let i = 0; i < 5; i++) setTimeout(spawnHeart, i * 80)
-}
 
 function toggle() {
   store.toggle()
   emit('play-state', store.playing)
 }
 
-// 首次打开面板时初始化音频
 onMounted(() => { if (!store.playing) store.loadTrack() })
 </script>
 
 <style scoped>
-.panel {
-  width: 260px;
-  padding: 14px 14px 6px;
-  background: rgba(255,255,255,0.55);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(255,255,255,0.3);
-  border-radius: 16px;
-  color: var(--text-body);
-  box-shadow: 0 8px 28px rgba(0,0,0,0.05);
-  position: relative;
-  overflow: visible;
+/* 写死宽度，不跟着容器变 —— 否则在笔记页左列（260/300）和圆盘浮层里
+   会是两个尺寸，一大一小地跳。
+   max-width: 100% 只是兜底，防止将来放进比 260 更窄的容器里溢出。 */
+.mp-card {
+  width: 280px;
+  max-width: 100%;
 }
 
-.head {
-  display: flex;
-  align-items: start;
-  justify-content: space-between;
-  gap: 8px;
-  margin-bottom: 6px;
-}
-
-.title { font-size: 0.9rem; color: #5a7a62; font-weight: 500; line-height: 1.3; }
-.artist { font-size: 0.7rem; color: #a098b0; }
-.artist-name { font-weight: 400; }
-.sep { opacity: 0.3; margin: 0 4px; }
-.tag { font-size: 0.65rem; opacity: 0.4; letter-spacing: 1px; color: #b0aab8; }
-
-.x {
-  border: none; background: transparent;
-  color: rgba(0,0,0,0.18); cursor: pointer;
-  font-size: 0.8rem; transition: 0.2s; flex-shrink: 0;
-}
-.x:hover { color: var(--light-pink); }
-
-/* ---- 频谱 ---- */
-.spectrum {
-  display: flex;
-  justify-content: space-evenly;
-  align-items: flex-end;
-  gap: 1px;
-  height: 24px;
-}
-
-.bar {
-  flex: 1;
-  height: 6px;
-  border-radius: 2px;
-  background: rgba(160,130,200,0.5);
-  transition: height 0.3s ease;
-}
-
-.spectrum.active .bar {
-  transition: height 0.1s ease;
-}
-
-/* ---- 控制 ---- */
-.controls {
-  display: grid;
-  grid-template-columns: 1fr 34px 44px 34px 1fr;
-  align-items: center;
-  justify-items: center;
-  gap: 4px;
-  position: relative;
-  margin-top: 2px;
-}
-
-.controls .ctrl:first-child { justify-self: start; }
-.controls .ctrl:last-child { justify-self: end; }
-
-.ctrl {
-  width: 34px; height: 34px;
-  border-radius: 50%; border: none;
+.mp-x {
+  border: none;
   background: transparent;
+  color: rgba(255, 255, 255, 0.35);
   cursor: pointer;
-  display: grid; place-items: center;
-  transition: 0.2s;
+  font-size: 0.8rem;
+  line-height: 1;
+  padding: 2px 4px;
+  transition: color 0.2s;
 }
+.mp-x:hover { color: var(--light-pink); }
 
-.ctrl img { width: 17px; height: 17px; opacity: 0.35; transition: opacity 0.2s; }
-.ctrl:hover { background: rgba(160,210,185,0.22); }
-.ctrl:hover img { opacity: 0.65; }
-.ctrl.on { background: rgba(160,210,185,0.18); }
-.ctrl.on img { opacity: 0.5; }
+/* ---- 封面 + 信息 ---- */
+.now { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
 
-.play { width: 44px; height: 44px; margin: 0 6px; }
-.play img { width: 22px; height: 22px; opacity: 0.5; }
-.play:hover { background: rgba(160,210,185,0.25); }
-.play:hover img { opacity: 0.75; }
-
-/* ---- 爱心 ---- */
-.float-hearts {
+.cover {
+  position: relative;
+  width: 60px;
+  height: 60px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  overflow: hidden;
+  background: rgba(160, 210, 185, 0.16);
+  display: grid;
+  place-items: center;
+}
+.cover-note { width: 24px; height: 24px; color: rgba(160, 210, 185, 0.4); }
+.cover-img {
   position: absolute;
-  top: 80px; left: 0; right: 0;
-  height: 40px;
-  pointer-events: none; z-index: 5;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0;
+  transition: opacity 0.3s;
+  /* 动画常驻，只切 play-state —— 暂停会停在当前角度，而不是弹回 0° */
+  animation: mpSpin 4s linear infinite;
+  animation-play-state: paused;
 }
+.cover-img.on { opacity: 1; }
+.cover-img.spinning { animation-play-state: running; }
+@keyframes mpSpin { to { transform: rotate(360deg); } }
 
-.fh {
-  position: absolute; bottom: 0;
-  font-size: 1rem;
-  animation: floatUp 1s ease-out both;
+.info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.name {
+  margin: 0;
+  font-size: 0.92rem;
+  font-weight: 600;
+  line-height: 1.3;
+  color: rgba(255, 255, 255, 0.92);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
-
-@keyframes floatUp {
-  0% { transform: translateY(0) scale(0.6); opacity: 1; }
-  60% { transform: translateY(-24px) scale(1); opacity: 0.7; }
-  100% { transform: translateY(-36px) scale(0.3); opacity: 0; }
+.artist {
+  margin: 0;
+  font-size: 0.74rem;
+  color: rgba(255, 255, 255, 0.5);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
+.meta { display: flex; align-items: center; gap: 8px; margin-top: 1px; }
+.times {
+  font-size: 0.68rem;
+  font-variant-numeric: tabular-nums;
+  color: rgba(255, 255, 255, 0.45);
+  flex-shrink: 0;
+}
+.vol { display: flex; align-items: center; gap: 4px; margin-left: auto; }
+.vol-btn {
+  border: none;
+  background: transparent;
+  padding: 0;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+.vol-btn img { width: 14px; height: 14px; opacity: 0.4; transition: opacity 0.2s; }
+.vol-btn:hover img { opacity: 0.75; }
 
 /* ---- 进度 + 音量 ---- */
-.progress {
-  display: grid;
-  grid-template-columns: auto 1fr auto;
-  gap: 4px; align-items: center;
-  margin-top: 6px;
-  cursor: pointer;
-  user-select: none;
-}
-
-.t { font-size: 0.65rem; opacity: 0.5; color: #a0a8b0; min-width: 30px; }
-.t.total { min-width: 30px; text-align: right; opacity: 0; transition: opacity 0.25s; }
-.t.total.on { opacity: 0.4; }
-
-.seek-bar {
-  -webkit-appearance: none; appearance: none;
-  width: 100%; height: 4px; border-radius: 2px;
-  background: rgba(160,210,185,0.45); outline: none;
-  cursor: pointer;
-}
-
-.seek-bar::-webkit-slider-thumb {
+.seek {
   -webkit-appearance: none;
-  width: 18px; height: 18px; border-radius: 50%;
-  background: url("data:image/svg+xml,%3Csvg viewBox='0 0 20 20' xmlns='http://www.w3.org/2000/svg'%3E%3Cg transform='translate(10,10)'%3E%3Cellipse cx='0' cy='-4.5' rx='1.8' ry='3.5' fill='%23a0d2b9' opacity='.7'/%3E%3Cellipse cx='0' cy='-4.5' rx='1.8' ry='3.5' fill='%23a0d2b9' opacity='.7' transform='rotate(72)'/%3E%3Cellipse cx='0' cy='-4.5' rx='1.8' ry='3.5' fill='%23a0d2b9' opacity='.7' transform='rotate(144)'/%3E%3Cellipse cx='0' cy='-4.5' rx='1.8' ry='3.5' fill='%23a0d2b9' opacity='.7' transform='rotate(216)'/%3E%3Cellipse cx='0' cy='-4.5' rx='1.8' ry='3.5' fill='%23a0d2b9' opacity='.7' transform='rotate(288)'/%3E%3Ccircle cx='0' cy='0' r='2.2' fill='%2380b098' opacity='.7'/%3E%3C/g%3E%3C/svg%3E") no-repeat center;
-  background-size: 100%; cursor: pointer !important;
-}
-
-.seek-bar::-moz-range-thumb {
-  width: 18px; height: 18px; border-radius: 50%;
-  background: url("data:image/svg+xml,%3Csvg viewBox='0 0 20 20' xmlns='http://www.w3.org/2000/svg'%3E%3Cg transform='translate(10,10)'%3E%3Cellipse cx='0' cy='-4.5' rx='1.8' ry='3.5' fill='%23a0d2b9' opacity='.7'/%3E%3Cellipse cx='0' cy='-4.5' rx='1.8' ry='3.5' fill='%23a0d2b9' opacity='.7' transform='rotate(72)'/%3E%3Cellipse cx='0' cy='-4.5' rx='1.8' ry='3.5' fill='%23a0d2b9' opacity='.7' transform='rotate(144)'/%3E%3Cellipse cx='0' cy='-4.5' rx='1.8' ry='3.5' fill='%23a0d2b9' opacity='.7' transform='rotate(216)'/%3E%3Cellipse cx='0' cy='-4.5' rx='1.8' ry='3.5' fill='%23a0d2b9' opacity='.7' transform='rotate(288)'/%3E%3Ccircle cx='0' cy='0' r='2.2' fill='%2380b098' opacity='.7'/%3E%3C/g%3E%3C/svg%3E") no-repeat center;
-  background-size: 100%; cursor: pointer; border: none;
-}
-
-.volume {
-  display: grid;
-  grid-template-columns: 30px 1fr 30px;
-  gap: 4px; align-items: center;
-  margin-top: 0;
-}
-
-.vol-btn {
-  width: 26px; height: 26px;
-  border: none; background: transparent;
+  appearance: none;
+  display: block;
+  width: 100%;
+  height: 4px;
+  border-radius: 2px;
+  background: rgba(160, 210, 185, 0.45);
+  outline: none;
   cursor: pointer;
-  display: grid; place-items: center; padding: 0;
+  margin: 0 0 4px;
 }
-
-.vol-btn img { width: 16px; height: 16px; opacity: 0.3; transition: opacity 0.2s; }
-.vol-btn:hover img { opacity: 0.55; }
-
-.vol-spacer { width: 30px; }
+.seek::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #a0d2b9;
+  cursor: pointer;
+}
+.seek::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border: none;
+  border-radius: 50%;
+  background: #a0d2b9;
+  cursor: pointer;
+}
 
 .vol-bar {
-  -webkit-appearance: none; appearance: none;
-  width: 100%; height: 3px; border-radius: 2px;
-  background: rgba(160,210,185,0.4); outline: none;
+  -webkit-appearance: none;
+  appearance: none;
+  width: 46px;
+  height: 3px;
+  border-radius: 2px;
+  background: rgba(160, 210, 185, 0.4);
+  outline: none;
+  cursor: pointer;
 }
-
 .vol-bar::-webkit-slider-thumb {
   -webkit-appearance: none;
-  width: 18px; height: 18px; border-radius: 50%;
-  background: url("data:image/svg+xml,%3Csvg viewBox='0 0 20 20' xmlns='http://www.w3.org/2000/svg'%3E%3Cg transform='translate(10,10)'%3E%3Cellipse cx='0' cy='-4.5' rx='1.8' ry='3.5' fill='%23a0d2b9' opacity='.7'/%3E%3Cellipse cx='0' cy='-4.5' rx='1.8' ry='3.5' fill='%23a0d2b9' opacity='.7' transform='rotate(72)'/%3E%3Cellipse cx='0' cy='-4.5' rx='1.8' ry='3.5' fill='%23a0d2b9' opacity='.7' transform='rotate(144)'/%3E%3Cellipse cx='0' cy='-4.5' rx='1.8' ry='3.5' fill='%23a0d2b9' opacity='.7' transform='rotate(216)'/%3E%3Cellipse cx='0' cy='-4.5' rx='1.8' ry='3.5' fill='%23a0d2b9' opacity='.7' transform='rotate(288)'/%3E%3Ccircle cx='0' cy='0' r='2.2' fill='%2380b098' opacity='.7'/%3E%3C/g%3E%3C/svg%3E") no-repeat center;
-  background-size: 100%; cursor: pointer;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: #a0d2b9;
+  cursor: pointer;
 }
-
 .vol-bar::-moz-range-thumb {
-  width: 18px; height: 18px; border-radius: 50%;
-  background: url("data:image/svg+xml,%3Csvg viewBox='0 0 20 20' xmlns='http://www.w3.org/2000/svg'%3E%3Cg transform='translate(10,10)'%3E%3Cellipse cx='0' cy='-4.5' rx='1.8' ry='3.5' fill='%23a0d2b9' opacity='.7'/%3E%3Cellipse cx='0' cy='-4.5' rx='1.8' ry='3.5' fill='%23a0d2b9' opacity='.7' transform='rotate(72)'/%3E%3Cellipse cx='0' cy='-4.5' rx='1.8' ry='3.5' fill='%23a0d2b9' opacity='.7' transform='rotate(144)'/%3E%3Cellipse cx='0' cy='-4.5' rx='1.8' ry='3.5' fill='%23a0d2b9' opacity='.7' transform='rotate(216)'/%3E%3Cellipse cx='0' cy='-4.5' rx='1.8' ry='3.5' fill='%23a0d2b9' opacity='.7' transform='rotate(288)'/%3E%3Ccircle cx='0' cy='0' r='2.2' fill='%2380b098' opacity='.7'/%3E%3C/g%3E%3C/svg%3E") no-repeat center;
-  background-size: 100%; cursor: pointer; border: none;
+  width: 9px;
+  height: 9px;
+  border: none;
+  border-radius: 50%;
+  background: #a0d2b9;
+  cursor: pointer;
 }
 
-/* ---- 歌单 ---- */
+/* ---- 控制键 ---- */
+.controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 2px;
+}
+.ctrl {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  transition: background 0.2s;
+}
+.ctrl img { width: 18px; height: 18px; opacity: 0.5; transition: opacity 0.2s; }
+.ctrl:hover { background: rgba(160, 210, 185, 0.22); }
+.ctrl:hover img { opacity: 0.85; }
+.ctrl.on { background: rgba(160, 210, 185, 0.2); }
+.ctrl.on img { opacity: 0.8; }
+.play { width: 48px; height: 48px; }
+.play img { width: 24px; height: 24px; opacity: 0.7; }
+.play:hover { background: rgba(160, 210, 185, 0.25); }
+.play:hover img { opacity: 0.95; }
+
+/* ---- 歌单抽屉 ---- */
+.drawer {
+  display: grid;
+  grid-template-rows: 0fr;
+  opacity: 0;
+  transition: grid-template-rows 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease;
+}
+.drawer.open { grid-template-rows: 1fr; opacity: 1; }
+.drawer-clip { overflow: hidden; min-height: 0; }
+
 .playlist {
-  margin-top: 10px;
-  border-top: 1px solid rgba(0, 0, 0, 0.06);
-  padding-top: 8px;
+  margin-top: 8px;
+  padding-top: 6px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
   display: flex;
   flex-direction: column;
   max-height: 120px;
   overflow-y: auto;
-  scrollbar-width: thin;
+  /* 跟全站一致：不用滚动条。
+     src/style.css 里已经有 `::-webkit-scrollbar{display:none}` 和
+     `*{scrollbar-width:none}`，但这里原先写了 scrollbar-width:thin
+     把它覆盖掉了（旧 MusicPanel 就这么写的），所以歌单是唯一露出滚动条的地方。 */
+  scrollbar-width: none;
 }
-
-.playlist::-webkit-scrollbar {
-  display: block;
-  width: 4px;
-}
-
-.playlist::-webkit-scrollbar-thumb {
-  background: rgba(160, 210, 185, 0.35);
-  border-radius: 2px;
-}
-
-.playlist::-webkit-scrollbar-track {
-  background: transparent;
-}
-
+.playlist::-webkit-scrollbar { display: none; }
 .pl-item {
   display: flex;
   align-items: center;
@@ -353,24 +358,12 @@ onMounted(() => { if (!store.playing) store.loadTrack() })
   text-align: left;
   transition: background 0.2s;
 }
-
-.pl-item:hover {
-  background: rgba(160, 210, 185, 0.15);
-}
-
-.pl-item.active {
-  background: rgba(160, 210, 185, 0.25);
-}
-
-.pl-idx {
-  font-size: 0.65rem;
-  color: rgba(0, 0, 0, 0.3);
-  min-width: 16px;
-}
-
+.pl-item:hover { background: rgba(160, 210, 185, 0.15); }
+.pl-item.active { background: rgba(160, 210, 185, 0.25); }
+.pl-idx { font-size: 0.7rem; color: rgba(255, 255, 255, 0.35); min-width: 16px; }
 .pl-title {
-  font-size: 0.75rem;
-  color: var(--text-body);
+  font-size: 0.81rem;
+  color: rgba(255, 255, 255, 0.8);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;

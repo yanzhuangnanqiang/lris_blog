@@ -31,6 +31,8 @@ export const notes = Object.entries(noteModules)
       date: meta.date || '',
       tags: Array.isArray(meta.tags) ? meta.tags : (meta.tags ? [meta.tags] : []),
       summary: meta.summary || '',
+      // 可选：frontmatter 里写 category 就能自定义分类；不写则由笔记页退回用第一个 tag
+      category: meta.category || '',
       cover: meta.cover || '',
       bodyMd: body.trim(),
       bodyHtml: null, // 延迟渲染，首次点开时计算
@@ -39,9 +41,35 @@ export const notes = Object.entries(noteModules)
   .sort((a, b) => new Date(b.date) - new Date(a.date))
 
 let _renderer = null
+// 每次 renderNote 前重置，用来收集这一篇的标题
+let _headings = []
+let _seen = null
+
+// marked 18 起不再自动给标题加 id，得自己生成。
+// 必须去重：两处同名标题若共用一个 id，目录里两项都会跳到同一个位置。
+function slugify(text) {
+  const base = text.trim().toLowerCase()
+    .replace(/[^\p{L}\p{N}]+/gu, '-')
+    .replace(/^-+|-+$/g, '') || 'section'
+  let id = base
+  for (let n = 1; _seen.has(id); n++) id = `${base}-${n}`
+  _seen.add(id)
+  return id
+}
+
+const ENTITIES = { amp: '&', lt: '<', gt: '>', quot: '"', '#39': "'", nbsp: ' ' }
+
+// 目录条目要的是纯文字，但 marked 给的是行内 HTML
+function plainText(html) {
+  return html
+    .replace(/<[^>]*>/g, '')
+    .replace(/&(#?\w+);/g, (m, e) => ENTITIES[e] ?? m)
+    .trim()
+}
+
 async function ensureRenderer() {
   if (_renderer) return _renderer
-  const [{ Marked }, { markedHighlight }, hljsMod, bash, javascript, typescript, css, xml, python, json, markdown, yaml, powershell] = await Promise.all([
+  const [{ Marked, Renderer }, { markedHighlight }, hljsMod, bash, javascript, typescript, css, xml, python, json, markdown, yaml, powershell] = await Promise.all([
     import('marked'),
     import('marked-highlight'),
     import('highlight.js/lib/core'),
@@ -77,11 +105,31 @@ async function ensureRenderer() {
       }
     })
   )
+  _renderer.use({
+    renderer: {
+      heading({ tokens, depth }) {
+        const inline = this.parser.parseInline(tokens)
+        if (depth !== 2 && depth !== 3) return `<h${depth}>${inline}</h${depth}>\n`
+        const text = plainText(inline)
+        const id = slugify(text)
+        _headings.push({ level: depth, id, text })
+        return `<h${depth} id="${id}">${inline}</h${depth}>\n`
+      },
+      table(token) {
+        // 窄屏下宽表格会撑破阅读面板，包一层让它自己横向滚动
+        return `<div class="table-wrap">${Renderer.prototype.table.call(this, token)}</div>\n`
+      },
+    },
+  })
   return _renderer
 }
 
 export async function renderNote(note) {
   await import('highlight.js/styles/vs2015.css')
   const marked = await ensureRenderer()
-  return marked.parse(note.bodyMd)
+  _headings = []
+  _seen = new Set()
+  const html = marked.parse(note.bodyMd)
+  note.headings = _headings
+  return html
 }

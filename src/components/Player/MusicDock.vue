@@ -1,6 +1,8 @@
 <template>
   <div class="dock">
-    <div class="disc-wrap">
+    <!-- 面板打开时整块圆盘藏起来：卡片里已经有一个圆形封面（同一张图），
+         两个一模一样且同步旋转的唱片同时出现很蠢。关掉面板（✕）它再回来。 -->
+    <div class="disc-wrap" :class="{ gone: open }">
       <p class="disc-hint" v-if="!store.playing && !currentMsg">听会歌放松一下吧</p>
       <p class="disc-msg" v-if="msgKey" :key="msgKey">{{ currentMsg }}</p>
       <button class="disc-btn" :class="{ spinning: store.playing }" @click="onDiscClick">
@@ -8,8 +10,10 @@
       </button>
     </div>
 
+    <!-- closable：面板形态要能关掉（笔记页左列那张是常开的，不传这个 prop） -->
     <MusicPanel
       v-show="open"
+      closable
       @close="open = false"
       @play-state="store.playing = $event"
     />
@@ -20,7 +24,7 @@
 import { ref } from 'vue'
 import MusicPanel from './MusicPanel.vue'
 import { useMusicStore } from '@/stores/music'
-import discImg from '@/assets/liushenji.png'
+import discImg from '@/assets/optimized/liushenji.webp'
 
 const store = useMusicStore()
 const open = ref(false)
@@ -89,6 +93,9 @@ function onDiscClick() {
   align-items: center;
   gap: 10px;
 }
+
+/* 面板打开时收起整块圆盘（见模板里的注释） */
+.disc-wrap.gone { display: none; }
 
 .disc-btn {
   width: 56px;

@@ -13,7 +13,7 @@
 </template>
 
 <script setup>
-import avatarImg from '@/assets/avatar.jpg'
+import avatarImg from '@/assets/optimized/avatar.webp'
 const avatar = avatarImg
 </script>
 

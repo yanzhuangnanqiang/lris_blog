@@ -1,9 +1,18 @@
-import { resolvePhotoSrc } from './sceneCards.js'
+import { resolvePhotoSrc, resolvePhotoThumb } from './sceneCards.js'
 
-// 说说专用：图片放 src/assets/share/，自动加载
+// 说说专用：原图在 src/assets/saiset/share/，缩略图在 src/assets/optimized/saiset/share/
+// （缩略图由 scripts/optimize-images.mjs 生成，动图 .gif 原样复制）
 const shareImgs = import.meta.glob('@/assets/saiset/share/*.{jpg,jpeg,png,gif,JPG,JPEG,PNG,webp}', { eager: true, import: 'default' })
+const shareThumbs = import.meta.glob('@/assets/optimized/saiset/share/*.{webp,gif}', { eager: true, import: 'default' })
+
 const shareMap = Object.fromEntries(Object.entries(shareImgs).map(([p, u]) => [p.replace(/.*\//, ''), u]))
+// 缩略图按「去掉扩展名的基名」建索引 —— 因为 .jpeg 的缩略图叫 .webp
+const shareThumbMap = Object.fromEntries(
+  Object.entries(shareThumbs).map(([p, u]) => [p.replace(/.*\//, '').replace(/\.[^.]+$/, ''), u])
+)
+
 function sharePhoto(name) { return shareMap[name] || name }
+function shareThumb(name) { return shareThumbMap[name.replace(/\.[^.]+$/, '')] || sharePhoto(name) }
 
 // ===== 图片画廊 =====
 export const gallery = [
@@ -17,7 +26,7 @@ export const gallery = [
   { photo: '4',     tag: '动漫', text: '鸢尾在微光里悄然绽放。' },
   { photo: '8',     tag: '动漫', text: '风很大，天空很蓝。' },
   { photo: '10',    tag: '动漫', text: '收藏一片叶子，像收藏这个秋天。' },
-].map(s => ({ ...s, src: resolvePhotoSrc(s.photo) }))
+].map(s => ({ ...s, src: resolvePhotoThumb(s.photo), full: resolvePhotoSrc(s.photo) }))
 
 // ===== 计划 =====
 export const plans = {
@@ -66,7 +75,8 @@ export const lifeJournal = [
   ...day,
   items: day.items.map(item => ({
     ...item,
-    photoSrcs: (item.photos || []).map(p => sharePhoto(p)),
+    photoSrcs: (item.photos || []).map(p => shareThumb(p)),
+    photoFulls: (item.photos || []).map(p => sharePhoto(p)),
   })),
 }))
 

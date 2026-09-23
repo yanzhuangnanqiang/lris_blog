@@ -4,7 +4,6 @@ import { ref } from 'vue'
 export const useAppStore = defineStore('app', () => {
   const isSidebarCollapsed = ref(false)
   const currentNav = ref('latest')       // latest / archive / lab
-  const filterYear = ref('all')
   const isPetalEnabled = ref(true)
 
   const toggleSidebar = () => {
@@ -18,7 +17,6 @@ export const useAppStore = defineStore('app', () => {
   return {
     isSidebarCollapsed,
     currentNav,
-    filterYear,
     isPetalEnabled,
     toggleSidebar,
     setNav
