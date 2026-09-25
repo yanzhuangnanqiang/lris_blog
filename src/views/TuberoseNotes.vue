@@ -58,6 +58,14 @@
               </div>
             </div>
             <div class="rp-body" v-html="renderedHtml"></div>
+            <!-- 评论区：每篇一个独立讨论串（term 用笔记 id），可在 .md 的
+                 frontmatter 里写 comment: false 单独关掉。
+                 dark 是因为这块在深色阅读面板里，标题区（不在 iframe 内）要翻成浅色。 -->
+            <GiscusComment
+              v-if="selectedNote.comment"
+              :term="`/notes/${selectedNote.id}`"
+              dark
+            />
           </article>
           <!-- 右列：统计卡在上（跟着页面滚走），目录在下（sticky 吸顶）—— 纯 CSS 接力，无 JS -->
           <div class="reader-right">
@@ -84,6 +92,14 @@
               </div>
             </div>
             <div class="rp-body" v-html="renderedHtml"></div>
+            <!-- 评论区：每篇一个独立讨论串（term 用笔记 id），可在 .md 的
+                 frontmatter 里写 comment: false 单独关掉。
+                 dark 是因为这块在深色阅读面板里，标题区（不在 iframe 内）要翻成浅色。 -->
+            <GiscusComment
+              v-if="selectedNote.comment"
+              :term="`/notes/${selectedNote.id}`"
+              dark
+            />
           </article>
           <!-- 右列：统计卡在上（跟着页面滚走），目录在下（sticky 吸顶）—— 纯 CSS 接力，无 JS -->
           <div class="reader-right">
@@ -116,11 +132,101 @@
           </div>
 
           <div class="av-result">
+            <div class="av-views" role="group" aria-label="切换视图">
+              <button
+                type="button"
+                :class="{ on: archiveView === 'grid' }"
+                :aria-pressed="archiveView === 'grid'"
+                @click="archiveView = 'grid'"
+              >网格</button>
+              <button
+                type="button"
+                :class="{ on: archiveView === 'timeline' }"
+                :aria-pressed="archiveView === 'timeline'"
+                @click="archiveView = 'timeline'"
+              >时间线</button>
+              <button
+                type="button"
+                :class="{ on: archiveView === 'zigzag' }"
+                :aria-pressed="archiveView === 'zigzag'"
+                @click="archiveView = 'zigzag'"
+              >之字形</button>
+            </div>
             <button v-if="archiveQuery || activeTags.length" type="button" class="av-clear" @click="clearFilters">清除筛选</button>
             <p class="av-count" aria-live="polite">{{ filteredArchive.length }} 篇笔记</p>
           </div>
 
-          <div class="av-grid">
+          <!-- ===== 之字形视图（照 XinghuisamaBlogs 的 TimelineNode：左右交替的大卡片）===== -->
+          <div v-if="archiveView === 'zigzag' && filteredArchive.length" class="av-zigzag">
+            <span class="zz-spine" aria-hidden="true"></span>
+            <button
+              v-for="(n, i) in filteredArchive"
+              :key="n.id"
+              type="button"
+              class="zz-node"
+              :class="{ right: i % 2 === 1 }"
+              @click="selectedId = n.id"
+            >
+              <span class="zz-mid"><span class="zz-dot"></span></span>
+              <span class="zz-card">
+                <span class="zz-cover" :style="{ backgroundImage: `url(${resolveCover(n) || noteImgForId(n.id)})` }"></span>
+                <span class="zz-body">
+                  <span class="zz-date">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+                         stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                      <circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" />
+                    </svg>
+                    {{ n.date }}
+                  </span>
+                  <span class="zz-title">{{ n.title }}</span>
+                  <span v-if="n.tags.length" class="zz-tags">
+                    <span v-for="t in n.tags" :key="t"># {{ t }}</span>
+                  </span>
+                  <span v-if="n.summary" class="zz-desc">{{ n.summary }}</span>
+                </span>
+              </span>
+            </button>
+          </div>
+
+          <!-- ===== 时间线视图（照参考站 ArchivePanel 的三栏排法：日期 ｜ 线+点 ｜ 标题）===== -->
+          <!-- ⚠️ 这三块必须是 v-if / v-else-if / v-else-if 一条链。
+               之前时间线和网格各写各的 v-if，网格用 v-else 只跟得上"时间线"那一个，
+               结果切到之字形时网格也跟着渲染了（多出一层卡片）。 -->
+          <div v-else-if="archiveView === 'timeline' && filteredArchive.length" class="av-timeline">
+            <div v-for="g in timelineGroups" :key="g.year" class="tl-group">
+              <button
+                type="button"
+                class="tl-year"
+                :class="{ collapsed: collapsedYears.has(g.year) }"
+                :aria-expanded="!collapsedYears.has(g.year)"
+                @click="toggleYear(g.year)"
+              >
+                <span class="tl-year-num">{{ g.year }}</span>
+                <span class="tl-mark"><span class="tl-ring"></span></span>
+                <span class="tl-count">
+                  {{ g.items.length }} 篇
+                  <svg class="tl-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                       stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <polyline points="6 9 12 15 18 9" />
+                  </svg>
+                </span>
+              </button>
+
+              <button
+                v-for="n in (collapsedYears.has(g.year) ? [] : g.items)"
+                :key="n.id"
+                type="button"
+                class="tl-row"
+                @click="selectedId = n.id"
+              >
+                <span class="tl-date">{{ n.date.slice(5) }}</span>
+                <span class="tl-mark"><span class="tl-dot"></span></span>
+                <span class="tl-title" :title="n.title">{{ n.title }}</span>
+              </button>
+            </div>
+          </div>
+
+          <div v-else-if="archiveView === 'grid'" class="av-grid">
             <!-- 卡片里有 h4/div，用不了 <button>（button 只允许行内内容），
                  所以用 role + tabindex 补上键盘可达性 -->
             <div
@@ -129,11 +235,11 @@
               class="av-card"
               role="button"
               tabindex="0"
-              :style="{ backgroundImage: `url(${resolveCover(note) || noteImgForId(note.id)})` }"
               @click="selectedId = note.id"
               @keydown.enter.prevent="selectedId = note.id"
               @keydown.space.prevent="selectedId = note.id"
             >
+              <div class="avc-cover" :style="{ backgroundImage: `url(${resolveCover(note) || noteImgForId(note.id)})` }"></div>
               <div class="avc-main">
                 <h4>{{ note.title }}</h4>
                 <span class="avc-date">{{ note.date }}</span>
@@ -169,12 +275,14 @@
 <script setup>
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import { onBeforeRouteLeave } from 'vue-router'
+import { useReveal } from '@/composables/useReveal'
 import TopBar from '@/components/app/TopBar.vue'
 import BackgroundWallpaper from '@/components/BackgroundWallpaper.vue'
 import NotesMusic from '@/components/tuberose/NotesMusic.vue'
 import NotesAside from '@/components/tuberose/NotesAside.vue'
 import SiteStatsCard from '@/components/tuberose/SiteStatsCard.vue'
 import WidgetCard from '@/components/app/WidgetCard.vue'
+import GiscusComment from '@/components/app/GiscusComment.vue'
 import Sidebar from '@/components/tuberose/Sidebar.vue'
 import WelcomePanel from '@/components/tuberose/WelcomePanel.vue'
 import PetalEffect from '@/components/tuberose/PetalEffect.vue'
@@ -240,6 +348,10 @@ const coverImg = computed(() => {
   return resolveCover(selectedNote.value) || noteImgForId(selectedNote.value.id)
 })
 const mainRef = ref(null)
+// 之字形时间线的入场动效。复用分享页那套 useReveal（IntersectionObserver +
+// 只播一次 + 认 prefers-reduced-motion），不引 framer-motion 之类的库。
+// root 传 mainRef —— 本页的滚动发生在这个自定义容器里，不能留空。
+const { reveal } = useReveal(mainRef)
 const tocRef = ref(null)
 const showTopBtn = ref(false)
 const hideTocBtn = ref(false)
@@ -307,6 +419,42 @@ const filteredArchive = computed(() => {
   return list
 })
 
+// 归档页两种视图：grid = 卡片网格 / timeline = 按年折叠的时间线
+const archiveView = ref('grid')
+
+// 时间线分组：按年，年内的顺序沿用 filteredArchive 的倒序
+const timelineGroups = computed(() => {
+  const m = new Map()
+  for (const n of filteredArchive.value) {
+    const y = (n.date || '').slice(0, 4) || '未知'
+    if (!m.has(y)) m.set(y, [])
+    m.get(y).push(n)
+  }
+  return [...m]
+    .map(([year, items]) => ({ year, items }))
+    .sort((a, b) => b.year.localeCompare(a.year))
+})
+
+// 默认只展开最新那年、其余收起（照参考站 foldArticle 的做法）。
+// 分组一变（换筛选 / 换页签）就重置回默认。
+const collapsedYears = ref(new Set())
+watch(timelineGroups, (gs) => {
+  collapsedYears.value = new Set(gs.slice(1).map(g => g.year))
+}, { immediate: true })
+
+function toggleYear(year) {
+  const s = new Set(collapsedYears.value)
+  if (s.has(year)) s.delete(year)
+  else s.add(year)
+  collapsedYears.value = s
+}
+
+// 切到之字形时让它逐条浮现（切走再回来会重演 —— v-if 重建了元素，
+// useReveal 靠的 data-revealed 标记随之清空）
+watch(archiveView, (v) => {
+  if (v === 'zigzag') nextTick(() => reveal('.zz-node', { stagger: 0.06 }))
+})
+
 // 左列「分类 / 标签」点一下 → 切到归档页签并套上筛选。
 // 必须 await nextTick：切页签会触发上面那个 watch 清空筛选，而 watch 是 pre-flush、
 // 跑在 nextTick 回调之前 —— 顺序反了刚设的筛选就被清掉了。
@@ -327,15 +475,15 @@ async function onAsidePick({ kind, value }) {
   }
 }
 
-// 切页签（最新 / 归档 / 实验室）时清掉归档筛选。
-// 离开 /notes 再回来本来就会清（组件卸载），只有页内切页签这一种情况漏了。
-// 点当前已激活的页签不触发 —— currentNav 没变。
-watch(() => theme.currentNav, (nav) => {
+// 点页签就刷新状态 —— 包括**重复点当前已激活的那个**（这也是「刷新」）。
+//   一律清掉归档筛选；点到「归档」还要退回网格，否则 selectedNote 优先级更高、
+//   会停在阅读页上，"归档"等于点不进去。
+// 用 navVersion 而不是 currentNav：后者重复点同一个值不变，watch 根本不触发。
+// 注：点「最新」不会关掉正在读的那篇（那太容易误伤），只清筛选。要改成关掉说一声。
+watch(() => theme.navVersion, () => {
   archiveQuery.value = ''
   activeTags.value = []
-  // 点到「归档」就回归档网格：归档分支里 selectedNote 的优先级更高，
-  // 不清掉的话你会停在阅读页上，"归档"等于点不进去。
-  if (nav === 'archive') {
+  if (theme.currentNav === 'archive') {
     selectedId.value = null
     mainRef.value?.scrollTo(0, 0)
   }
@@ -604,54 +752,348 @@ onBeforeRouteLeave(() => {
 .rp-body :deep(th), .rp-body :deep(td) { padding: 8px 14px; border: 1px solid rgba(255,255,255,0.08); text-align: left; }
 .rp-body :deep(th) { background: rgba(255,255,255,0.05); color: #fff; font-weight: 500; }
 
-/* ===== 归档视图 ===== */
+/* ===== 归档视图 =====
+   1500px 是"4 列卡片都能长到上限 360px"的宽度：4×360 + 3×18(间距) = 1494。
+   原来写的 1000px 只够 3 列，所以大屏再怎么宽也停在 3 列、两边越空越多。 */
 .archive-view {
-  max-width: 1000px;
+  max-width: 1500px;
   width: calc(100% - 48px);
   margin: 0 auto 60px;
 }
-.av-search { margin-bottom: 20px; display: flex; justify-content: center; }
-.av-search-box { position: relative; max-width: 420px; width: 100%; }
+/* 搜索框。surface 和 .av-card 统一：同一个底色、同一根 1px 浅边框、同档圆角。
+   去掉 backdrop-filter —— 下面的卡片本来就没有模糊，而且这页多数在窄屏
+   （窄屏那套早做过"去毛玻璃"）。配色没动，还是粉线焦点。 */
+.av-search { margin-bottom: 18px; display: flex; justify-content: center; }
+.av-search-box { position: relative; max-width: 460px; width: 100%; }
 .av-search input {
   width: 100%;
-  padding: 10px 38px 10px 16px;
-  border-radius: 12px;
-  border: 1px solid rgba(255,255,255,0.1);
-  background: rgba(30,42,50,0.4);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  color: rgba(255,255,255,0.85);
-  font-size: 0.85rem;
+  padding: 12px 44px 12px 18px;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(30, 42, 50, 0.6);
+  color: rgba(255, 255, 255, 0.88);
+  font-family: inherit;      /* input 不继承字体，不加会掉出中文字体栈 */
+  font-size: 0.86rem;
   letter-spacing: 1px;
   outline: none;
-  transition: border-color 0.3s;
   box-sizing: border-box;
+  transition: border-color 0.25s, background 0.25s;
 }
-.av-search input::placeholder { color: rgba(255,255,255,0.3); }
-.av-search input:focus { border-color: rgba(111,66,193,0.4); }
-.av-search-icon { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); opacity: 0.3; color: rgba(255,255,255,0.6); display: flex; }
+.av-search input::placeholder { color: rgba(255, 255, 255, 0.28); }
+.av-search input:hover { background: rgba(30, 42, 50, 0.72); }
+.av-search input:focus {
+  border-color: rgba(217, 130, 180, 0.45);      /* 粉线，跟标签同色系 */
+  background: rgba(30, 42, 50, 0.78);
+}
+.av-search-icon {
+  position: absolute;
+  right: 15px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  color: rgba(255, 255, 255, 0.45);
+  transition: color 0.25s;
+}
+/* 聚焦时放大镜也跟着亮 —— 比原来那个死板的 opacity: 0.3 有反馈 */
+.av-search-box:focus-within .av-search-icon { color: rgba(240, 184, 216, 0.9); }
 
-.av-tags { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 20px; padding: 14px 18px; background: rgba(15,20,30,0.28); border-radius: 14px; border: 1px solid rgba(255,255,255,0.06); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
+/* 标签栏：一整块容器，和卡片同一套 surface（同底色 + 同边框 + 同圆角）。
+   宽度不跟网格走 —— 网格可以很宽（横排看图），但工具栏是阅读型的，通铺到 1500px
+   会让 9 个小胶囊挤在最左边、右边空一大片。780px 够它们排一行。 */
+.av-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  max-width: 780px;
+  margin: 0 auto 18px;
+  padding: 16px 18px;
+  background: rgba(30, 42, 50, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+}
+/* 胶囊圆角比容器小一档（16 → 11），嵌套看起来才不糊 */
 .av-tag {
-  padding: 5px 14px;
-  border-radius: 14px;
-  background: rgba(15,20,30,0.45);
-  border: 1px solid rgba(255,255,255,0.1);
+  padding: 6px 14px;
+  border-radius: 11px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
   color: #e8a0c8;
   font-family: inherit;   /* 按钮不会继承字体，不加会掉出中文字体栈 */
   font-size: 0.78rem;
   letter-spacing: 1px;
   cursor: pointer;
-  transition: 0.2s;
+  transition: background 0.2s, border-color 0.2s, color 0.2s, transform 0.2s;
 }
-.av-tag:hover { background: rgba(15,20,30,0.65); color: #f0b8d8; }
-.av-tag.active {
-  background: rgba(217,130,180,0.25);
-  border-color: rgba(217,130,180,0.4);
+.av-tag:hover {
+  background: rgba(217, 130, 180, 0.14);
+  border-color: rgba(217, 130, 180, 0.35);
   color: #f0b8d8;
+  transform: translateY(-1px);
+}
+.av-tag:active { transform: translateY(0); }
+.av-tag.active {
+  background: rgba(217, 130, 180, 0.26);
+  border-color: rgba(217, 130, 180, 0.55);
+  color: #ffd0e8;
 }
 
-.av-result { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 24px; }
+/* ===== 视图切换（网格 / 时间线）===== */
+.av-views {
+  display: flex;
+  gap: 4px;
+  padding: 3px;
+  background: rgba(30, 42, 50, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+}
+.av-views button {
+  padding: 5px 14px;
+  border: none;
+  border-radius: 9px;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.5);
+  font-family: inherit;
+  font-size: 0.76rem;
+  letter-spacing: 1px;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+}
+.av-views button:hover { color: rgba(255, 255, 255, 0.8); }
+.av-views button.on { background: rgba(217, 130, 180, 0.22); color: #ffd0e8; }
+
+/* ===== 时间线 =====
+   照参考站 ArchivePanel 的三栏排法：日期 ｜ 虚线+圆点 ｜ 标题。
+   它用 w-[15%] / w-[15%] / w-[70%]（桌面 10/10/80），这里换成固定像素。 */
+.av-timeline {
+  padding: 10px 18px 16px;
+  background: rgba(30, 42, 50, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+}
+
+/* 年份行和文章行共用这套三栏骨架 */
+.tl-year,
+.tl-row {
+  display: grid;
+  grid-template-columns: 66px 32px 1fr;
+  align-items: center;
+  width: 100%;
+  border: none;
+  background: transparent;
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.tl-mark {
+  position: relative;
+  align-self: stretch;
+  display: grid;
+  place-items: center;
+}
+/* 竖虚线只画在文章行上（年份行断开，和参考站一致），靠它把上下串成一条线 */
+.tl-row .tl-mark::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  border-left: 1px dashed rgba(255, 255, 255, 0.13);
+}
+
+/* ---- 年份行 ---- */
+.tl-year { height: 54px; border-radius: 10px; transition: background 0.2s; }
+.tl-year:hover { background: rgba(255, 255, 255, 0.04); }
+.tl-year-num {
+  text-align: right;
+  padding-right: 4px;
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.5);
+  transition: color 0.2s;
+}
+.tl-year:hover .tl-year-num { color: #ffd0e8; }
+/* 年份是空心圆，和文章那个小实心点区分开 */
+.tl-ring {
+  position: relative;
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  border: 2px solid rgba(217, 130, 180, 0.6);
+}
+.tl-count {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.42);
+  transition: color 0.2s;
+}
+.tl-year:hover .tl-count { color: rgba(255, 255, 255, 0.75); }
+.tl-arrow {
+  width: 14px;
+  height: 14px;
+  transition: transform 0.25s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.tl-year.collapsed .tl-arrow { transform: rotate(-90deg); }
+
+/* ---- 文章行 ---- */
+.tl-row { min-height: 42px; border-radius: 10px; transition: background 0.2s; }
+.tl-row:hover { background: rgba(217, 130, 180, 0.1); }
+.tl-date {
+  text-align: right;
+  padding-right: 4px;
+  font-size: 0.72rem;
+  color: rgba(255, 255, 255, 0.38);
+  font-variant-numeric: tabular-nums;
+}
+/* 小实心点，hover 时拉成一小段竖线（参考站是 h-1 → h-5） */
+.tl-dot {
+  position: relative;
+  width: 3px;
+  height: 3px;
+  border-radius: 2px;
+  background: rgba(217, 130, 180, 0.65);
+  transition: height 0.25s cubic-bezier(0.22, 1, 0.36, 1), background 0.2s;
+}
+.tl-row:hover .tl-dot { height: 18px; background: rgba(240, 184, 216, 0.95); }
+.tl-title {
+  font-size: 0.86rem;
+  color: rgba(255, 255, 255, 0.78);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  transition: color 0.2s;
+}
+.tl-row:hover .tl-title { color: #fff; }
+
+/* ===== 之字形时间线 =====
+   照 XinghuisamaBlogs 的 TimelineNode：左右交替的大卡片 + 中间一列圆点。
+   它用 w-5/12 ｜ w-6 h-6 节点 ｜ w-5/12，这里换成 1fr 44px 1fr 的三栏网格。
+   入场动效复用项目已有的 useReveal（滚进视口逐条浮现，只播一次），不引动画库。 */
+.av-zigzag { position: relative; padding: 6px 0; }
+
+/* 中轴竖线，被圆点的实心底盖住，所以看起来是断开的 */
+.zz-spine {
+  position: absolute;
+  left: 50%;
+  top: 0;
+  bottom: 0;
+  transform: translateX(-50%);
+  border-left: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.zz-node {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: 1fr 44px 1fr;
+  align-items: center;
+  width: 100%;
+  margin-bottom: 26px;
+  border: none;
+  background: transparent;
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.zz-node:last-child { margin-bottom: 0; }
+
+.zz-mid { grid-column: 2; display: grid; place-items: center; }
+/* 圆点：实心底盖住中轴线（参考站是 border-4 圈 + ring-4 外圈光晕） */
+.zz-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 3px solid #d982b4;
+  background: #1b2630;
+  box-shadow: 0 0 0 4px rgba(217, 130, 180, 0.14);
+  transition: box-shadow 0.3s, border-color 0.3s;
+}
+.zz-node:hover .zz-dot {
+  border-color: #f0b8d8;
+  box-shadow: 0 0 0 7px rgba(217, 130, 180, 0.22);
+}
+
+/* 偶数在左栏、奇数在右栏。
+   justify-self 让它俩各自**贴着中间的中轴**，而不是贴在外侧 ——
+   卡片封顶之后如果不靠拢，窄卡就会离圆点十万八千里。 */
+.zz-node:not(.right) .zz-card { grid-column: 1; justify-self: end; }
+.zz-node.right .zz-card { grid-column: 3; justify-self: start; }
+
+.zz-card {
+  width: 100%;
+  /* 封顶 440px。不封的话卡片会跟着归档区一起长：
+     归档区 1500 时每张 728px 宽、封面 410px 高，整张 530px，一屏只看得到一张。 */
+  max-width: 440px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: rgba(30, 42, 50, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 18px;
+  transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1), border-color 0.3s, box-shadow 0.3s;
+}
+.zz-node:hover .zz-card {
+  transform: translateY(-3px);
+  border-color: rgba(217, 130, 180, 0.35);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.32);
+}
+
+.zz-cover {
+  aspect-ratio: 16 / 9;
+  background-size: cover;
+  background-position: center 30%;
+  background-color: rgba(30, 42, 50, 0.6);
+}
+.zz-body { display: flex; flex-direction: column; gap: 7px; padding: 12px 14px 14px; }
+.zz-date {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.7rem;
+  letter-spacing: 1px;
+  color: rgba(232, 160, 200, 0.9);
+  font-variant-numeric: tabular-nums;
+}
+.zz-date svg { width: 13px; height: 13px; flex-shrink: 0; }
+.zz-title {
+  font-size: 0.92rem;
+  font-weight: 600;
+  line-height: 1.35;
+  color: #fff;
+  /* 最多两行、超出省略（不需要 clamp 插件） */
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.zz-tags { display: flex; flex-wrap: wrap; gap: 5px; }
+.zz-tags span {
+  padding: 2px 8px;
+  border-radius: 7px;
+  background: rgba(217, 130, 180, 0.12);
+  border: 1px solid rgba(217, 130, 180, 0.2);
+  color: #e8a0c8;
+  font-size: 0.66rem;
+}
+.zz-desc {
+  font-size: 0.74rem;
+  line-height: 1.6;
+  color: rgba(255, 255, 255, 0.42);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* 结果行（视图切换 / 清除筛选 / 篇数）跟标签栏同宽，不然图标和计数会飘到屏幕两头 */
+.av-result {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  max-width: 780px;
+  margin: 0 auto 24px;
+}
 .av-count { font-size: 0.78rem; color: rgba(255,255,255,0.35); letter-spacing: 2px; margin: 0 0 0 auto; }
 .av-clear {
   padding: 4px 12px;
@@ -677,40 +1119,55 @@ onBeforeRouteLeave(() => {
 
 .av-grid {
   display: grid;
-  /* min(320px,100%) 只是给窄屏兜底：容器 ≥320px 时它恒等于 320px，桌面端行为不变 */
-  grid-template-columns: repeat(auto-fill, minmax(min(320px, 100%), 1fr));
+  /* 卡片宽度封顶 340px。
+     原来用 1fr，列数少的时候卡片反而更大 —— 2 列时被撑到 340~500px，
+     比 3 列的 321px 还大，所以"中屏"看着最粗。封顶后各档统一：
+       ≥1011px → 3 列 ~321px
+       660~1010 → 2 列 321~340px
+       < 660    → 1 列 ≤340px（居中，不再通铺）
+     min(320px,100%) 给极窄屏兜底，免得轨道比容器还宽撑出横向滚动。
+     多余空间交给 justify-content 居中，否则会全部堆在右边。 */
+  grid-template-columns: repeat(auto-fill, minmax(min(320px, 100%), 360px));
+  justify-content: center;
   gap: 18px;
 }
 
+/* 分离式：图片单独一行，文字在图片**外面**的卡片底色上，不往图上叠任何遮罩。
+   原来图和字是叠在一起的（.avc-main 一条半透明渐变 + .avc-tags 一块实色），
+   两套做法拼在一起就是「盖上去又没盖上去」的观感。 */
 .av-card {
-  position: relative;
-  background-size: cover;
-  /* 卡片比 16:9 扁，取景上移一点，人脸才不会被顶边切到 */
-  background-position: center 30%;
-  background-color: rgba(30,42,50,0.6);
-  border: 1px solid rgba(255,255,255,0.08);
-  border-radius: 16px;
-  overflow: hidden;
-  cursor: pointer;
-  transition: 0.25s;
-  min-height: 160px;
   display: flex;
   flex-direction: column;
-  justify-content: flex-end;
+  background: rgba(30, 42, 50, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  overflow: hidden;          /* 靠它把封面上面两角裁成 16px 圆角 */
+  cursor: pointer;
+  transition: 0.25s;
 }
 .av-card:hover {
   border-color: rgba(111,66,193,0.25);
   transform: translateY(-3px);
   box-shadow: 0 8px 32px rgba(0,0,0,0.3);
 }
+
+/* 封面。2:1 是照参考站 PostCard 的手机比例（它用 aspect-2/1，桌面才改横排）。
+   16:9 会让卡片明显偏高，2:1 更接近改动前的 160px 高度。
+   代价：16:9 的图上下各裁掉约 5.5%（人脸在 y≈20–43%，切不到）。 */
+.avc-cover {
+  aspect-ratio: 2 / 1;
+  background-size: cover;
+  background-position: center 30%;
+  background-color: rgba(30, 42, 50, 0.6);   /* 图缺失时的兜底 */
+}
+
 .avc-main {
-  position: relative;
-  z-index: 1;
   display: flex;
-  align-items: flex-end;
+  align-items: baseline;     /* 标题和日期按基线对齐，不再靠底边 */
   justify-content: space-between;
-  padding: 24px 20px 10px;
-  background: linear-gradient(to top, rgba(15,22,30,0.92) 0%, rgba(15,22,30,0.5) 60%, transparent 100%);
+  gap: 10px;
+  padding: 12px 14px 6px;
+  background: none;          /* 不再是那条渐变 */
 }
 .avc-main h4 {
   font-size: 0.95rem;
@@ -718,17 +1175,18 @@ onBeforeRouteLeave(() => {
   color: #fff;
   letter-spacing: 1px;
   margin: 0;
-  text-shadow: 0 1px 4px rgba(0,0,0,0.5);
+  /* 原来有 text-shadow 是为了压在图上时保证可读；现在文字在纯色底上，
+     留着只会显脏 */
 }
 .avc-date { font-size: 0.7rem; color: rgba(255,255,255,0.45); letter-spacing: 1px; white-space: nowrap; }
 .avc-tags {
-  position: relative;
-  z-index: 1;
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
-  padding: 0 20px 18px;
-  background: rgba(15,22,30,0.92);
+  padding: 0 14px 14px;
+  background: none;          /* 不再是那块实色 */
+  /* 标题有一行/两行的差异时，标签仍贴在卡片底部，同一排卡片对齐 */
+  margin-top: auto;
 }
 .avc-tags span {
   font-size: 0.68rem;
@@ -899,7 +1357,9 @@ onBeforeRouteLeave(() => {
   /* 统计卡在窄屏没地方搁，藏掉。
      ⚠️ 只能藏统计卡 —— 目录现在也是 .wcard，按 .wcard 藏会把目录一起干掉。 */
   .reader-right :deep(.stats-slot) { display: none; }
-  /* 目录卡在浮层里不再叠一层玻璃，只留标题和列表 */
+  /* 目录卡在浮层里不再叠一层玻璃。
+     ⚠️ 标题栏也必须藏 —— 窄屏的目录列表是 position:fixed 的抽屉浮层，
+     壳剥掉之后标题会孤零零留在页面流里，在文章下面单独出一行「▌文章目录」。 */
   .toc-slot {
     background: none;
     border: none;
@@ -908,6 +1368,7 @@ onBeforeRouteLeave(() => {
     border-radius: 0;
     padding: 0;
   }
+  .toc-slot :deep(.wcard-head) { display: none; }
   .reader-panel { padding: 28px 20px; width: calc(100% - 24px); margin: 0 auto 60px; max-width: 900px; }
   .rp-body :deep(img) { max-width: 100%; height: auto; }
   .rp-header h1 { font-size: 1.4rem; }
@@ -925,15 +1386,19 @@ onBeforeRouteLeave(() => {
    那两个小圆钮（回到顶部 / 目录）面积只有几百像素，模糊开销可忽略，
    而且模糊正是它们的外观特征，所以保留。 */
 @media (max-width: 860px) {
-  .reader-panel,
-  .av-search input,
-  .av-tags {
+  /* 搜索框和标签栏已经不写 backdrop-filter 了（基础样式就没有），
+     这两条覆盖已删 —— 留着只会在窄屏把底色换成另一套，白白不一致。 */
+  .reader-panel {
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
+    background: rgba(30, 42, 50, 0.86);
   }
-  .reader-panel { background: rgba(30, 42, 50, 0.86); }
-  .av-search input { background: rgba(30, 42, 50, 0.8); }
-  .av-tags { background: rgba(15, 20, 30, 0.7); }
+  /* 之字形窄屏不再左右交替，全部靠左一列（参考站也是 md 以下不交替） */
+  .zz-spine { left: 17px; }
+  .zz-node { grid-template-columns: 34px 1fr; }
+  .zz-mid { grid-column: 1; }
+  .zz-node:not(.right) .zz-card,
+  .zz-node.right .zz-card { grid-column: 2; }
 }
 
 /* ===== 极小屏 ===== */
@@ -941,9 +1406,9 @@ onBeforeRouteLeave(() => {
   .reader-panel { padding: 20px 16px; }
   .rp-header h1 { font-size: 1.2rem; letter-spacing: 2px; }
   .rp-back { margin-bottom: 18px; }
-  .av-card { min-height: 140px; }
-  .avc-main { padding: 18px 16px 8px; }
-  .avc-tags { padding: 0 16px 14px; }
+  /* min-height 已经不存在了（分离式靠封面撑高），这里只剩内边距微调 */
+  .avc-main { padding: 12px 14px 6px; }
+  .avc-tags { padding: 0 14px 14px; }
   .av-result { margin-bottom: 18px; }
 }
 </style>

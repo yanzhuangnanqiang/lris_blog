@@ -82,6 +82,8 @@ function setupReveal() {
 watch(
   () => route.params.id,
   () => {
+    const scroller = document.querySelector('.detail-scroller')
+    if (scroller) scroller.scrollTop = 0
     setupReveal()
   },
   { immediate: true }

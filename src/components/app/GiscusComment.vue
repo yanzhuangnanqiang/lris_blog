@@ -1,5 +1,5 @@
 <template>
-  <div class="giscus-wrap">
+  <div class="giscus-wrap" :class="{ dark }">
     <div class="giscus-head">
       <h3 class="giscus-title">评 论</h3>
       <a
@@ -18,6 +18,11 @@ import { onMounted, watch, ref } from 'vue'
 
 const props = defineProps({
   term: { type: String, required: true },
+  // 放进深色容器时打开：标题区（这个 div 不在 iframe 里）要翻成浅色。
+  dark: { type: Boolean, default: false },
+  // iframe 内部的主题。data-theme 是**每个实例单独**设的，
+  // 所以浅色页（PostDetail）和深色页（笔记阅读面板）可以各用各的。
+  theme: { type: String, default: 'light' },   // 'light' | 'dark'
 })
 
 const giscusRef = ref(null)
@@ -35,7 +40,11 @@ function loadGiscus() {
   s.setAttribute('data-reactions-enabled', '1')
   s.setAttribute('data-emit-metadata', '0')
   s.setAttribute('data-input-position', 'bottom')
-  s.setAttribute('data-theme', 'https://www.thineiris.top/giscus-theme.css')
+  // giscus 的 iframe 跑在 giscus.app 上，相对路径会被解析到那边去，必须给绝对地址。
+  // 用 location.origin 而不是写死域名 —— 这样本地 dev 也能看到主题效果
+  // （写死的话 localhost 会去拉线上那份，改动看不到）。
+  const themeFile = props.theme === 'dark' ? 'giscus-theme-dark.css' : 'giscus-theme.css'
+  s.setAttribute('data-theme', `${location.origin}/${themeFile}`)
   s.setAttribute('data-lang', 'zh-CN')
   s.crossOrigin = 'anonymous'
   s.async = true
@@ -90,6 +99,20 @@ watch(
 }
 
 .giscus-github:hover {
+  color: var(--text-dark);
+  background: var(--mint-green);
+  border-color: var(--mint-green);
+}
+
+/* ---- 深色容器里（笔记页的阅读面板）----
+   上面那套颜色是给浅色页面设计的：--text-dark 是近黑，放深底上等于看不见。 */
+.giscus-wrap.dark { border-top-color: rgba(255, 255, 255, 0.1); }
+.giscus-wrap.dark .giscus-title { color: rgba(255, 255, 255, 0.92); }
+.giscus-wrap.dark .giscus-github {
+  color: rgba(255, 255, 255, 0.5);
+  border-color: rgba(255, 255, 255, 0.14);
+}
+.giscus-wrap.dark .giscus-github:hover {
   color: var(--text-dark);
   background: var(--mint-green);
   border-color: var(--mint-green);

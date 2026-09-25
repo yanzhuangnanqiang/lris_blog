@@ -80,4 +80,3 @@ export function resolvePhotoSrc(name) {
 export function resolvePhotoThumb(name) {
   return (photoMap[name] ?? photoMap['1']).thumb
 }
-

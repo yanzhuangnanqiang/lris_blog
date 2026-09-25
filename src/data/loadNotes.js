@@ -33,6 +33,8 @@ export const notes = Object.entries(noteModules)
       summary: meta.summary || '',
       // 可选：frontmatter 里写 category 就能自定义分类；不写则由笔记页退回用第一个 tag
       category: meta.category || '',
+      // 逐篇开关评论区（照 Aemeath 的 entry.data.comment）：写 comment: false 就不显示，默认显示
+      comment: !/^(false|no|0)$/i.test(meta.comment ?? ''),
       cover: meta.cover || '',
       bodyMd: body.trim(),
       bodyHtml: null, // 延迟渲染，首次点开时计算

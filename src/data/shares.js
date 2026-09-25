@@ -1,3 +1,11 @@
+/*
+ * @Author       : Hidden Goose yanzhuangqiang@email.ncu.edu.cn
+ * @Date         : 2026-09-21 15:17:07
+ * @LastEditors  : Hidden Goose yanzhuangqiang@email.ncu.edu.cn
+ * @LastEditTime : 2026-09-25 10:57:38
+ * @FilePath     : /myweb-Hiddengoose/src/data/shares.js
+ * @Description  : 如果你喜欢的话， 请你一定要保持好的心情继续喜欢下去😘🥰
+ */
 import { resolvePhotoSrc, resolvePhotoThumb } from './sceneCards.js'
 
 // 说说专用：原图在 src/assets/saiset/share/，缩略图在 src/assets/optimized/saiset/share/
@@ -26,17 +34,20 @@ export const gallery = [
   { photo: '4',     tag: '动漫', text: '鸢尾在微光里悄然绽放。' },
   { photo: '8',     tag: '动漫', text: '风很大，天空很蓝。' },
   { photo: '10',    tag: '动漫', text: '收藏一片叶子，像收藏这个秋天。' },
+  
 ].map(s => ({ ...s, src: resolvePhotoThumb(s.photo), full: resolvePhotoSrc(s.photo) }))
 
 // ===== 计划 =====
 export const plans = {
   daily: [
     '学习javaweb...',
-    '准备考研'
+    '今天学习40分钟英语，再写一套卷子',
+    '下午2点写两个小时算法题',
+    '下午4点复习考研数学'
   ],
   weekly: [
-    '准备夏季小学期，预习计算机组织与结构',
-    '4号准备接送弟弟上学',
+    '及时回应icp备案信息',
+    '做好志愿服务证整理的工作',
     '给房间做一次大扫除',
     '回顾这周做了什么，写一句话总结',
   ],
@@ -52,7 +63,13 @@ export const lifeJournal = [
   //     { text: '在这里写你的说说...', photos: [], tag: '标签' },
   //   ],
   // },
-   {
+  {
+    date: '2026-09-25',
+    items: [
+      { text: '南昌大学神了，这是我在大学的第三个中秋节了，巧克力流心月饼好吃！', photos: ['中秋26-9-25-2.jpg','中秋26-9-25.jpg','shenle.png'], tag: '吃饭' },
+    ],
+  },
+  {
     date: '2026-05-31',
     items: [
       { text: '今天出去吃了一顿', photos: ['eat-05-31-26.jpg'], tag: '吃饭' },
