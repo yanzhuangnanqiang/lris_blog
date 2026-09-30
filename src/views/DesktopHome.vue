@@ -10,11 +10,18 @@
           <img :src="heroBg" class="preload" @load="heroLoaded = true" />
         </div>
         <PetalEffect />
+        <LeafFall />
 
-        <div class="hero-content" :class="{ fading: scrollProgress > 0.3 }">
+        <!-- 帘布揭幕：每次刷新 / 新开标签播一次 -->
+        <div class="curtain" :class="{ open: curtainOpen }" aria-hidden="true">
+          <div class="leaf leaf-left"><img :src="leafLeft" alt="" /></div>
+          <div class="leaf leaf-right"><img :src="leafRight" alt="" /></div>
+        </div>
+
+        <div class="hero-content" :class="{ show: curtainOpen, fading: scrollProgress > 0.3 }">
           <h1 class="hero-title" :style="{ color: titleColor }" @click="cycleColor">林间初见</h1>
-          <p class="hero-line1">像一株在晨光里悄然绽放的鸢尾</p>
-          <p class="hero-line2">这是一场安静的梦，也是一次不期而遇的心动。</p>
+          <p class="hero-line1">{{ typedLine1 }}<span v-if="cursorLine === 1" class="cursor">|</span></p>
+          <p class="hero-line2">{{ typedLine2 }}<span v-if="cursorLine === 2" class="cursor">|</span></p>
 
           <div class="light-spots" ref="spotsContainer">
             <p
@@ -88,12 +95,24 @@
             </div>
           </div>
 
-          <footer class="end-cap">林间初见 · 难忘夏光</footer>
+          <footer class="end-cap">
+            林间初见 · 难忘夏光
+            <a class="end-rss" href="/feed.xml" title="RSS 订阅" target="_blank" rel="noopener">
+              <svg class="rss-icon" viewBox="0 0 24 24" fill="currentColor"><circle cx="6" cy="18" r="2"/><path d="M4 4a16 16 0 0 1 16 16h-4A12 12 0 0 0 4 8z"/><path d="M4 4a16 16 0 0 1 16 16h-4A12 12 0 0 0 4 8z"/></svg>
+              <span>RSS</span>
+            </a>
+          </footer>
         </div>
       </section>
     </div>
   </div>
 </template>
+
+<script>
+// 页面级标记，故意不用 sessionStorage：
+// F5 / 新开标签会重置它，而从其它页切回首页（组件重新挂载）不会。
+let introPlayed = false
+</script>
 
 <script setup>
 import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
@@ -102,12 +121,15 @@ import TopBar from '@/components/app/TopBar.vue'
 import MusicDock from '@/components/Player/MusicDock.vue'
 import IconLink from '@/components/app/IconLink.vue'
 import PetalEffect from '@/components/tuberose/PetalEffect.vue'
+import LeafFall from '@/components/home/LeafFall.vue'
 import ProfileCard from '@/components/home/ProfileCard.vue'
 import AnnouncementCard from '@/components/home/AnnouncementCard.vue'
 import LatestNotesCard from '@/components/home/LatestNotesCard.vue'
 import { whispers } from '@/data/thoughts'
 import { posts } from '@/data/loadPosts'
 import heroBg from '@/assets/optimized/xiaguang.webp'
+import leafLeft from '@/assets/optimized/左.webp'
+import leafRight from '@/assets/optimized/右.webp'
 import chevronDown from '@/assets/chevron-down.svg'
 
 const router = useRouter()
@@ -123,6 +145,11 @@ const postsRef = ref(null)
 const mistRef = ref(null)
 const scrollProgress = ref(0)
 const mistLifted = ref(false)
+
+// 打字沿用站点原有的「同一会话只播一次」；帘布另用页面级 introPlayed（见普通 script 块）
+const TYPED_KEY = 'homeTyped'
+const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+const curtainOpen = ref(reduceMotion || introPlayed)
 
 let scrollerEl = null
 
@@ -185,6 +212,32 @@ function cycleColor() {
   titleColor.value = greens[colorIdx.value]
 }
 
+// —— 打字浮现效果 ——
+const fullLine1 = '像一株在晨光里悄然绽放的鸢尾'
+const fullLine2 = '这是一场安静的梦，也是一次不期而遇的心动。'
+const typedLine1 = ref('')
+const typedLine2 = ref('')
+const cursorLine = ref(0)
+
+async function startTyping() {
+  cursorLine.value = 1
+  await typeLine(fullLine1, typedLine1, 80)
+  cursorLine.value = 2
+  await typeLine(fullLine2, typedLine2, 65)
+  cursorLine.value = 0
+}
+
+function typeLine(text, target, delay) {
+  return new Promise(resolve => {
+    let i = 0
+    const timer = setInterval(() => {
+      target.value = text.slice(0, i + 1)
+      i++
+      if (i >= text.length) { clearInterval(timer); resolve() }
+    }, delay)
+  })
+}
+
 // 随机主题色
 const themes = ['mint', 'pink', 'blue', 'iris']
 const spotTheme = whispers.map(() => themes[Math.floor(Math.random() * themes.length)])
@@ -235,15 +288,40 @@ function onDragEnd() {
 
 onMounted(() => {
   scrollerEl = document.querySelector('.scroller')
+
+  // 帘布：每次刷新 / 新开标签都播；从其它页切回首页不播
+  const playIntro = !introPlayed && !reduceMotion
+  introPlayed = true
+
   if (scrollerEl) {
     scrollerEl.addEventListener('scroll', onScroll, { passive: true })
-    restoreScroll()
+    if (playIntro) {
+      // 开场必须从顶部看：跳过滚动恢复，并把上次残留的位置清掉
+      scrollerEl.scrollTop = 0
+      sessionStorage.removeItem('homeScroll')
+    } else {
+      restoreScroll()
+    }
   }
   onScroll()
   window.addEventListener('mousemove', onMove)
   window.addEventListener('mouseup', onDragEnd)
   window.addEventListener('touchmove', onMove, { passive: false })
   window.addEventListener('touchend', onDragEnd)
+
+  if (playIntro) {
+    setTimeout(() => { curtainOpen.value = true }, 800)
+  }
+
+  // 打字沿用原来的「同一会话只播一次」，不随帘布一起重置；
+  // 开场时推迟到帘布开完再打
+  if (reduceMotion || sessionStorage.getItem(TYPED_KEY)) {
+    typedLine1.value = fullLine1
+    typedLine2.value = fullLine2
+  } else {
+    const typingDelay = playIntro ? 1800 : 600
+    setTimeout(() => startTyping().then(() => sessionStorage.setItem(TYPED_KEY, '1')), typingDelay)
+  }
 })
 
 onBeforeRouteLeave(() => {
@@ -370,14 +448,62 @@ onBeforeUnmount(() => {
   }
 }
 
+/* ---- 帘布揭幕 ----
+   z-index 4：压在 hero-content(3) 之上盖住内容，开完滑走露出；
+   仍在 TopBar(50)、MusicDock 之下。hero 有 overflow:hidden，滑出即被裁掉。 */
+.curtain {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+/* 闭合期间吃掉误点（光斑/滚动箭头），打开后放行 */
+.curtain:not(.open) {
+  pointer-events: auto;
+}
+
+.leaf {
+  position: absolute;
+  top: -2%;
+  left: -2%;
+  width: 104%;
+  height: 104%;
+  transition: transform 1.8s cubic-bezier(0.55, 0.06, 0.35, 0.96);
+  will-change: transform;
+}
+
+.leaf img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+}
+
+/* 102% 而不是 100%：留余量，免得边缘差 1px 漏缝 */
+.curtain.open .leaf-left {
+  transform: translateX(-102%);
+}
+
+.curtain.open .leaf-right {
+  transform: translateX(102%);
+}
+
 .hero-content {
   position: relative;
   z-index: 3;
   text-align: center;
   transition: opacity 0.6s ease, transform 0.6s ease;
   margin-top: 100px;
+  opacity: 0;
 }
 
+.hero-content.show {
+  opacity: 1;
+}
+
+/* 必须排在 .show 之后：滚动淡出要压过 show 的 opacity: 1 */
 .hero-content.fading {
   opacity: 0.25;
   transform: translateY(-20px);
@@ -429,6 +555,19 @@ onBeforeUnmount(() => {
     0 0 4px rgba(184,148,79,0.45),
     0 0 10px rgba(0,0,0,0.25);
   animation: deepGold 3.5s ease-in-out 1s infinite;
+  min-height: 1.5em;
+}
+
+.cursor {
+  display: inline-block;
+  color: #c9a96e;
+  font-weight: 300;
+  animation: cursorBlink 0.7s step-end infinite;
+  margin-left: 1px;
+}
+@keyframes cursorBlink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
 }
 
 @keyframes deepGold {
@@ -846,6 +985,25 @@ onBeforeUnmount(() => {
   color: rgba(0,0,0,0.2);
   font-size: 0.82rem;
   letter-spacing: 4px;
+}
+
+.end-rss {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: 14px;
+  color: inherit;
+  text-decoration: none;
+  transition: color 0.2s;
+}
+.end-rss:hover {
+  color: #e09040;
+}
+
+.rss-icon {
+  width: 13px;
+  height: 13px;
+  opacity: 0.7;
 }
 
 @keyframes fadeUp {

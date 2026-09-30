@@ -1,5 +1,5 @@
 <template>
-  <div class="projects-page">
+  <div class="projects-page" :class="{ enter: entered }">
     <div class="bg-fixed" :style="{ backgroundImage: `url(${xinliBg})` }"></div>
     <div class="fog-layer" :style="fogStyle"></div>
     <TopBar />
@@ -35,7 +35,7 @@
         </div>
       </div>
 
-      <section v-if="!searchActive" class="calendar-section" :class="{ bloomed }" :style="{ opacity: 0.35 + Math.min(0.65, Math.max(0, (scrollPct - 0.05) * 3)) }">
+      <section v-if="!searchActive" class="calendar-section" :class="{ bloomed }">
         <div class="cal-header">
           <span class="cal-label">活动日历</span>
           <span class="cal-count">{{ calendarStats.activeDays }} 天有提交 · 共 {{ calendarStats.total }} 次</span>
@@ -65,45 +65,132 @@
         <p v-if="contribError" class="cal-error">暂时取不到提交数据</p>
       </section>
 
-      <div class="container" :style="{ opacity: searchActive ? 1 : Math.min(1, Math.max(0, (scrollPct - 0.1) * 3)) }">
-        <div v-if="loading" class="loading-state">加载中…</div>
-        <div v-else-if="error" class="error-state">
-          <p>拉取失败：{{ error }}</p>
-          <a href="https://github.com/yanzhuangnanqiang" target="_blank" rel="noreferrer">直接访问 GitHub →</a>
-        </div>
-        <div v-else>
-          <div v-if="repoSearch || filterLangs.length" class="result-hint">
-            {{ filteredRepos.length ? `找到 ${filteredRepos.length} 个项目` : '没有匹配的项目' }}
+      <!-- ===== 项目展示 =====
+           卡片就是普通内容：一次性全部呈现 —— 不 pin、不进滚动进度、不做入场动画。
+           卡片不是链接：跳转链接在点开的面板里（<a> 里不能套 <a>）。
+           卡片是 role="button"，回车/空格开面板；Esc 或点外面收起。 -->
+      <section v-if="showcaseRepos.length" class="works">
+        <div class="panels">
+          <div
+            v-for="(repo, i) in showcaseRepos"
+            :key="repo.id"
+            class="panel"
+            :class="{ active: expandedId === repo.id }"
+            role="button"
+            tabindex="0"
+            :aria-label="`${displayName(repo)}，回车查看详情`"
+            @click="openExpand(repo)"
+            @keydown.enter.prevent="openExpand(repo)"
+            @keydown.space.prevent="openExpand(repo)"
+          >
+            <img :src="showcaseArt[i % showcaseArt.length]" alt="" />
+
+            <!-- 常显：序号 + 项目名 -->
+            <span class="pcopy">
+              <span class="pno">0{{ i + 1 }}</span>
+              <span class="pname">{{ displayName(repo) }}</span>
+            </span>
+
+            <!-- 悬停/聚焦时浮出的轻量信息；详情点开面板看 -->
+            <span class="pinfo">
+              <span v-if="repo.language" class="plang" :style="{ '--dot': langColor(repo.language) }">{{ repo.language }}</span>
+              <span>{{ starSymbol(repo.stargazers_count) }} {{ repo.stargazers_count }}</span>
+              <span class="pmore">点开看详情</span>
+            </span>
           </div>
-          <div class="repo-grid" v-if="filteredRepos.length">
-            <a v-for="(repo, i) in filteredRepos" :key="repo.id" class="repo-card" :class="{ picked: pickedRepo === repo.id, dimmed: pickedRepo && pickedRepo !== repo.id }" :href="repo.html_url" target="_blank" rel="noreferrer" :style="{ animationDelay: `${i * 60}ms` }" @click.stop="pickedRepo = pickedRepo === repo.id ? null : repo.id">
-              <span v-if="isActive(repo)" class="repo-pulse" title="近期活跃"></span>
-              <div class="repo-top">
-                <span class="repo-name">{{ displayName(repo) }}</span>
-                <span class="repo-slug">{{ repo.name }}</span>
-              </div>
-              <div class="repo-desc">{{ repo.description || '暂无描述' }}</div>
-              <div class="repo-meta">
-                <span v-if="repo.language" class="repo-lang">{{ repo.language }}</span>
+        </div>
+
+        <p v-if="repoSearch || filterLangs.length" class="works-hint">
+          {{ filteredRepos.length ? `找到 ${filteredRepos.length} 个项目` : '没有匹配的项目' }}
+        </p>
+        <p v-if="filteredRepos.length > SHOWCASE_MAX" class="works-hint dim">
+          还有 {{ filteredRepos.length - SHOWCASE_MAX }} 个仓库 ·
+          <a :href="GITHUB_URL" target="_blank" rel="noreferrer">去 GitHub →</a>
+        </p>
+
+        <!-- 点开的面板：fixed 定位，居中盖在屏幕上 -->
+        <div v-if="expandedRepo" class="exp-mask" @click="closeExpand">
+          <div class="expand" @click.stop>
+            <button class="exp-close" aria-label="关闭" @click="closeExpand">✕</button>
+            <div class="exp-art" :style="{ backgroundImage: `url(${artFor(expandedIndex)})` }"></div>
+            <div class="exp-main">
+              <h3 class="exp-name">{{ displayName(expandedRepo) }}</h3>
+              <p class="exp-desc">{{ expandedRepo.description || '暂无描述' }}</p>
+              <dl class="exp-meta">
+                <div><dt>语言</dt><dd>{{ expandedRepo.language || '—' }}</dd></div>
+                <div><dt>Star</dt><dd>{{ expandedRepo.stargazers_count }}</dd></div>
+                <div><dt>Fork</dt><dd>{{ expandedRepo.forks_count }}</dd></div>
+                <div><dt>协议</dt><dd>{{ expandedRepo.license?.spdx_id || '—' }}</dd></div>
+                <div><dt>最近更新</dt><dd>{{ expandedRepo.updated_at.slice(0, 10) }}</dd></div>
+              </dl>
+              <a class="exp-link" :href="expandedRepo.html_url" target="_blank" rel="noreferrer">打开 GitHub →</a>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== 数据状态 =====
+           卡片是这页唯一的项目入口，所以这几种态都不能是空白：
+           加载中 / 拉取失败 / 拉到 0 个 / 筛不出结果。 -->
+      <section v-if="!showcaseRepos.length" class="static-works">
+        <p v-if="loading" class="sw-state">加载中…</p>
+
+        <template v-else-if="error">
+          <p class="sw-state">拉取失败：{{ error }}</p>
+          <a class="sw-link" href="https://github.com/yanzhuangnanqiang" target="_blank" rel="noreferrer">直接访问 GitHub →</a>
+        </template>
+
+        <p v-else-if="!repos.length" class="sw-state">暂时没有可展示的项目</p>
+        <p v-else-if="!filteredRepos.length" class="sw-state">没有匹配的项目</p>
+
+        <ul v-else class="sw-list">
+          <li v-for="repo in filteredRepos" :key="repo.id">
+            <a class="sw-item" :href="repo.html_url" target="_blank" rel="noreferrer">
+              <span class="sw-top">
+                <span class="sw-name">{{ displayName(repo) }}</span>
+                <span v-if="repo.language" class="plang" :style="{ '--dot': langColor(repo.language) }">{{ repo.language }}</span>
+              </span>
+              <span class="sw-desc">{{ repo.description || '暂无描述' }}</span>
+              <span class="sw-meta">
                 <span>{{ starSymbol(repo.stargazers_count) }} {{ repo.stargazers_count }}</span>
+                <span>⑂ {{ repo.forks_count }}</span>
+                <span v-if="repo.license">{{ repo.license.spdx_id }}</span>
                 <span>{{ repo.updated_at.slice(0, 10) }}</span>
-              </div>
-              <div class="repo-line"></div>
+              </span>
             </a>
-          </div>
-        </div>
-        <footer class="end-cap">每段代码都是一次花开</footer>
-      </div>
+          </li>
+        </ul>
+      </section>
+
+      <!-- ===== 项目总简介 =====
+           注意这和「每个项目的信息」是两回事：那个在卡片的面板里，这个是你对所有项目的一段总述。
+           普通一节，下翻到就能读，不 pin、不翻转。
+           ★ 文字在 src/data/projectIntro.js —— 改那个文件就够了，不用动这里。 -->
+      <section class="project-intro">
+        <h2 class="pi-title">{{ projectIntro.title }}</h2>
+
+        <p v-for="(para, i) in projectIntro.paragraphs" :key="i" class="pi-text">{{ para }}</p>
+
+        <dl v-if="projectStats" class="pi-stats">
+          <div><dt>仓库</dt><dd>{{ projectStats.count }}</dd></div>
+          <div><dt>Star</dt><dd>{{ projectStats.stars }}</dd></div>
+          <div><dt>语言</dt><dd>{{ projectStats.langs }}</dd></div>
+          <div><dt>最近更新</dt><dd>{{ projectStats.latest }}</dd></div>
+        </dl>
+      </section>
     </div>
   </div>
 </template>
 
 <script setup>
-import { computed, nextTick, onMounted, ref, watch } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import TopBar from '@/components/app/TopBar.vue'
 import MusicDock from '@/components/Player/MusicDock.vue'
 import xinliBg from '@/assets/optimized/xinli.webp'
 import { loadContributions, irisColorOf } from '@/data/contributions'
+import { projectIntro } from '@/data/projectIntro'
+import { showcaseArt } from '@/data/showcaseCards'
+import { useReveal } from '@/composables/useReveal'
 
 const repos = ref([])
 const loading = ref(true)
@@ -114,7 +201,18 @@ const repoSearch = ref('')
 const filterLangs = ref([])
 const searchActive = ref(false)
 const scrollingByCode = ref(false)
-const pickedRepo = ref(null)
+
+// 进场自动播的开关：onMounted 置 true，CSS 里靠 .enter 启动那三下浮现
+const entered = ref(false)
+
+// 滚进视口时逐条浮现（复用项目里现成的封装，root 已指向本页的 .scroller）
+const { reveal } = useReveal(scrollerRef)
+
+function revealOnScreen() {
+  const scope = scrollerRef.value ?? document
+  reveal('.calendar-section', { scope })
+  reveal('.panels', { scope })
+}
 
 function toggleLang(lang) {
   const idx = filterLangs.value.indexOf(lang)
@@ -138,7 +236,6 @@ const langColors = {
 }
 function langColor(lang) { return langColors[lang] || '#888' }
 function starSymbol(count) { return count >= 30 ? '✦' : count >= 5 ? '★' : '☆' }
-function isActive(repo) { return (Date.now() - new Date(repo.updated_at).getTime()) < 7 * 86400000 }
 
 const allLanguages = computed(() =>
   [...new Set(repos.value.map(r => r.language).filter(Boolean))]
@@ -186,8 +283,6 @@ function onScroll() {
   if (!el) return
   const maxScroll = el.scrollHeight - el.clientHeight
   scrollPct.value = maxScroll > 0 ? Math.min(1, el.scrollTop / Math.min(maxScroll, window.innerHeight * 1.2)) : 0
-  // 日历区开始可见 → 花开（只触发一次）
-  if (!bloomed.value && scrollPct.value > 0.25) bloomed.value = true
   // 下滑超一屏 或 手动滚回顶部 → 退出搜索模式
   if (searchActive.value && !scrollingByCode.value) {
     if (el.scrollTop < 20 || el.scrollTop > window.innerHeight * 1.2) {
@@ -300,8 +395,91 @@ onMounted(async () => {
 })
 // 日历数据来自站内，setup 阶段就铺好了 —— 这里不再有任何外部请求
 
-document.addEventListener('visibilitychange', () => {
-  if (document.visibilityState === 'visible') pickedRepo.value = null
+/* ==================== 项目展示 ====================
+   卡片就是普通内容：一次性全部呈现 —— 不进滚动进度、不 pin、不做入场动画。
+   （曾经按文章那样做成"滚动到某个进度才解锁"，结果是搜完看不到结果、卡片一闪而过。
+     内容不该被绑在滚动上。）花田那边有自己的 pin，量测在下面，两边互不相干。 */
+
+/** 一次最多摆几张卡（多出来的用下面那行提示指去 GitHub）。 */
+const SHOWCASE_MAX = 5
+const GITHUB_URL = 'https://github.com/yanzhuangnanqiang'
+
+/** 展示哪几个项目：搜索/筛选之后的**前 5 个**（repos 已按 updated 倒序）。
+ *  筛选作用在这里，所以搜索结果是立刻生效的 —— 不再需要滚到某个进度才解锁。 */
+const showcaseRepos = computed(() => filteredRepos.value.slice(0, SHOWCASE_MAX))
+
+/** 点击卡片后展开的那个面板看的是哪个仓库 */
+const expandedId = ref(null)
+const expandedRepo = computed(() => showcaseRepos.value.find(r => r.id === expandedId.value) ?? null)
+const expandedIndex = computed(() => showcaseRepos.value.findIndex(r => r.id === expandedId.value))
+
+const artFor = i => showcaseArt[Math.max(0, i) % showcaseArt.length]
+
+function openExpand(repo) {
+  expandedId.value = expandedId.value === repo.id ? null : repo.id
+}
+function closeExpand() {
+  expandedId.value = null
+}
+/** Esc 关闭面板（挂在 window 上，不用卡片自己抢焦点） */
+function onKeydown(e) {
+  if (e.key === 'Escape' && expandedId.value) closeExpand()
+}
+
+/** 结尾那段的数字总结。全部从已有的 repos 上算，不新增请求。 */
+const projectStats = computed(() => {
+  const list = repos.value
+  if (!list.length) return null
+  return {
+    count: list.length,
+    stars: list.reduce((n, r) => n + r.stargazers_count, 0),
+    langs: new Set(list.map(r => r.language).filter(Boolean)).size,
+    latest: list.map(r => r.updated_at).sort().at(-1)?.slice(0, 10) ?? '',
+  }
+})
+
+// 换一批卡（搜索/筛选）时，把点开的面板收起来 —— 否则面板里指向的可能已经不是这一批了
+watch(showcaseRepos, () => { expandedId.value = null })
+
+/* 花田的花开：进视口时触发一次。
+   以前是拿「全页滚动比例 > 0.25」算的 —— 页面一变长就不准，那个坑踩过。 */
+let bloomIO = null
+function armBloom() {
+  bloomIO?.disconnect()
+  const el = scrollerRef.value?.querySelector('.calendar-section')
+  if (!el) return
+  bloomIO = new IntersectionObserver(
+    entries => {
+      if (!entries.some(e => e.isIntersecting)) return
+      bloomed.value = true
+      bloomIO.disconnect()
+    },
+    { root: scrollerRef.value, threshold: 0, rootMargin: '0px 0px -15% 0px' }
+  )
+  bloomIO.observe(el)
+}
+
+onMounted(() => {
+  window.addEventListener('keydown', onKeydown)
+  // 进场自动播：标题 → 副标题 → 搜索栏展开。同步置位，免得先画一帧完整内容再"跳"回隐藏态
+  entered.value = true
+  nextTick(() => {
+    revealOnScreen()
+    armBloom()
+  })
+})
+
+// 花田是 v-if 的（搜索时会被拔掉）、卡片要等仓库拉回来 → 每次显隐都重新武装一次
+watch([searchActive, showcaseRepos], () => {
+  nextTick(() => {
+    revealOnScreen()
+    if (!searchActive.value) armBloom()
+  })
+})
+
+onBeforeUnmount(() => {
+  window.removeEventListener('keydown', onKeydown)
+  bloomIO?.disconnect()
 })
 </script>
 
@@ -320,6 +498,25 @@ document.addEventListener('visibilitychange', () => {
 .hero-title { font-size: 3.2rem; font-weight: 200; letter-spacing: 12px; color: #fff; font-family: 'Georgia','Times New Roman',serif; font-style: italic; text-shadow: 0 0 40px rgba(180,160,220,0.5), 0 2px 12px rgba(0,0,0,0.5); margin: 0; }
 .hero-sub { margin-top: 14px; font-size: 0.82rem; color: rgba(255,255,255,0.6); letter-spacing: 6px; font-weight: 300; text-shadow: 0 1px 4px rgba(0,0,0,0.4); }
 
+/* ===== 进场自动播 =====
+   驱动力是「时间」不是「滚动」：进页面就依次浮现，不用滚。
+   用独立的 translate 属性（不是 transform）—— .hero-content 自己有 transform: translateX(-50%)，
+   用 transform 会被动画覆盖掉，translate 和它各自生效。 */
+.projects-page.enter .hero-title { animation: enterUp 0.7s cubic-bezier(0.22, 1, 0.36, 1) 0s both; }
+.projects-page.enter .hero-sub { animation: enterUp 0.7s cubic-bezier(0.22, 1, 0.36, 1) 0.2s both; }
+.projects-page.enter .search-zone { animation: enterUp 0.6s cubic-bezier(0.22, 1, 0.36, 1) 0.45s both; }
+/* 搜索栏「从窄条展开」：最大宽度用 px→px 才插值得动（56px → 和 .search-zone 同宽） */
+.projects-page.enter .tool-search { animation: searchOpen 0.8s cubic-bezier(0.22, 1, 0.36, 1) 0.45s both; }
+
+@keyframes enterUp {
+  from { opacity: 0; translate: 0 14px; }
+  to { opacity: 1; translate: 0 0; }
+}
+@keyframes searchOpen {
+  from { max-width: 56px; opacity: 0.4; }
+  to { max-width: 520px; opacity: 1; }
+}
+
 .search-zone { max-width: 520px; width: calc(100% - 48px); position: absolute; top: 42vh; left: 50%; transform: translateX(-50%); z-index: 3; transition: max-width 0.4s ease; }
 .search-zone.active { position: relative; top: auto; left: auto; transform: none; max-width: 720px; margin: 48px auto 0; }
 .filter-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; padding-left: 14px; }
@@ -336,8 +533,19 @@ document.addEventListener('visibilitychange', () => {
 .ftag { padding: 5px 14px; border-radius: 20px; border: 1px solid rgba(0,0,0,0.1); background: rgba(255,255,255,0.4); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); font-size: 0.78rem; color: #222; cursor: pointer; letter-spacing: 1px; transition: 0.2s; }
 .ftag:hover, .ftag.active { background: rgba(91,63,211,0.2); border-color: rgba(91,63,211,0.35); color: #5B3FD3; }
 
-.calendar-section { --cell: 13px; --gap: 3px; max-width: 720px; margin: -20vh auto 0; padding: 0 24px 16px; min-height: 30vh; transition: opacity 0.5s; }
-.container { max-width: 960px; width: min(960px, calc(100vw - 48px)); margin: 0 auto; padding: 24px 0 60px; transition: opacity 0.5s; min-height: 60vh; }
+/* 花田独占一屏、内容居中 —— 滚到这里，这一屏就是花田。
+   透明度的淡入由模板上的行内样式驱动（跟着滚动比例走）。 */
+.calendar-section {
+  --cell: 13px;
+  --gap: 3px;
+  max-width: 720px;
+  width: calc(100% - 48px);
+  margin: 0 auto;
+  min-height: 100svh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
 .cal-header { display: flex; align-items: baseline; gap: 12px; margin-bottom: 12px; }
 .cal-label { font-size: 0.82rem; color: rgba(255,255,255,0.7); letter-spacing: 2px; text-shadow: 0 1px 4px rgba(0,0,0,0.5); }
 .cal-count { font-size: 1.1rem; color: #fff; font-weight: 600; letter-spacing: 1px; text-shadow: 0 0 10px rgba(91,63,211,0.6), 0 1px 4px rgba(0,0,0,0.5); }
@@ -396,7 +604,7 @@ document.addEventListener('visibilitychange', () => {
 .calendar-section.bloomed .cal-day:not(.empty)::before {
   animation: bloom 0.7s cubic-bezier(0.22, 1, 0.36, 1) backwards;
   /* 上限封在 18：一年可能有三四十朵花，不封顶最后一朵要等两秒多 */
-  animation-delay: calc(min(var(--i, 0), 18) * 45ms);
+  animation-delay: calc(min(var(--i, 0), 10) * 30ms);
 }
 
 /* --iris 给图例里的四朵花用；图例讲的是「开了多大」，所以四朵同色 */
@@ -407,31 +615,321 @@ document.addEventListener('visibilitychange', () => {
 /* 拉不到数据时给一句话，别让人对着一片空白猜是不是坏了 */
 .cal-error { margin: 6px 0 0; text-align: right; font-size: 0.72rem; color: rgba(255,255,255,0.45); letter-spacing: 1px; }
 
-.loading-state, .error-state { text-align: center; padding: 48px 0; color: #444; letter-spacing: 2px; }
-.error-state a { display: inline-block; margin-top: 10px; color: #5B3FD3; }
-.result-hint { text-align: center; font-size: 0.82rem; color: #444; letter-spacing: 2px; margin-bottom: 18px; }
+/* ===== 静态兜底：reduced-motion / 加载中 / 拉取失败 / 筛不出结果 =====
+   展示区是这页唯一的项目入口，所以这几种态都不能留白。
+   reduced-motion 走的就是这份列表 —— 不依赖动画，顺带能看全（不被 5 张的上限卡着）。 */
+.static-works {
+  max-width: 900px;
+  width: calc(100% - 48px);
+  margin: 0 auto;
+  padding: 40px 0 80px;
+}
 
-.repo-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 18px; }
-.repo-card { position: relative; display: flex; flex-direction: column; text-decoration: none; color: inherit; padding: 22px 20px 18px; border-radius: var(--radius-soft); max-width: 420px; background: linear-gradient(135deg, rgba(255,255,255,0.32) 0%, rgba(245,242,255,0.22) 100%); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.45); box-shadow: 0 2px 4px rgba(0,0,0,0.04), 0 8px 32px rgba(60,40,90,0.12), 0 1px 0 rgba(255,255,255,0.6) inset; opacity: 0; transform: translateY(20px); animation: cardIn 0.5s ease forwards; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
-.repo-card:hover { background: linear-gradient(135deg, rgba(255,255,255,0.44) 0%, rgba(248,245,255,0.32) 100%); box-shadow: 0 8px 16px rgba(0,0,0,0.08), 0 20px 56px rgba(60,40,90,0.22), 0 1px 0 rgba(255,255,255,0.8) inset; transform: translateY(-6px); border-color: rgba(91,63,211,0.3); transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
-.repo-card.picked { transform: translateY(-6px) scale(1.01) !important; border: 1.5px solid rgba(255,255,255,0.6) !important; box-shadow: 0 8px 32px rgba(60,40,90,0.2) !important; backdrop-filter: blur(16px) brightness(1.15) !important; -webkit-backdrop-filter: blur(16px) brightness(1.15) !important; background: linear-gradient(135deg, rgba(255,255,255,0.5) 0%, rgba(248,245,255,0.38) 100%) !important; }
-.repo-card.dimmed { opacity: 0.45; filter: blur(1.5px); }
-.repo-card.dimmed:hover { transform: none; box-shadow: 0 2px 4px rgba(0,0,0,0.04), 0 8px 32px rgba(60,40,90,0.12), 0 1px 0 rgba(255,255,255,0.6) inset; border-color: rgba(255,255,255,0.45); }
-@keyframes cardIn { to { opacity: 1; transform: translateY(0); } }
-.repo-top { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
-.repo-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
-.repo-pulse { position: absolute; top: 12px; right: 14px; width: 7px; height: 7px; border-radius: 50%; background: #4fc08d; box-shadow: 0 0 6px rgba(79,192,141,0.5); animation: pulse 2s ease-in-out infinite; }
-@keyframes pulse { 0%,100% { opacity: 0.6; } 50% { opacity: 1; } }
-.repo-name { font-size: 1rem; font-weight: 600; color: #1a1a1a; letter-spacing: 1px; transition: color 0.25s; }
-.repo-card:hover .repo-name { color: #5B3FD3; }
-.repo-slug { font-size: 0.65rem; color: #666; letter-spacing: 1px; flex: 1; }
-.repo-lang { font-size: 0.68rem; padding: 2px 8px; border-radius: 8px; background: rgba(91,63,211,0.1); color: #5B3FD3; letter-spacing: 1px; font-weight: 600; }
-.repo-desc { font-size: 0.85rem; color: #333; line-height: 1.7; flex: 1; }
-.repo-meta { margin-top: 12px; display: flex; align-items: center; gap: 16px; font-size: 0.76rem; color: #555; }
-.repo-line { position: absolute; bottom: 0; left: 10%; right: 10%; height: 1px; background: linear-gradient(90deg, transparent, rgba(91,63,211,0.12), transparent); }
+.sw-state {
+  padding: 40px 0;
+  text-align: center;
+  font-size: 0.85rem;
+  letter-spacing: 2px;
+  color: rgba(255, 255, 255, 0.7);
+  text-shadow: 0 1px 8px rgba(0, 0, 0, 0.5);
+}
 
-.end-cap { text-align: center; padding: 60px 0 40px; color: rgba(100,80,140,0.3); font-size: 0.78rem; letter-spacing: 4px; }
+.sw-link { display: block; margin-top: 10px; text-align: center; font-size: 0.85rem; letter-spacing: 1px; color: rgba(255, 255, 255, 0.85); }
+
+.sw-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 14px; }
+
+.sw-item {
+  display: block;
+  padding: 16px 18px;
+  border-radius: var(--radius-soft, 12px);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, 0.1);
+  text-decoration: none;
+  transition: background 0.25s, border-color 0.25s;
+}
+.sw-item:hover, .sw-item:focus-visible {
+  background: rgba(255, 255, 255, 0.18);
+  border-color: rgba(255, 255, 255, 0.4);
+}
+
+.sw-top { display: flex; align-items: center; gap: 10px; }
+.sw-name { font-size: 0.95rem; font-weight: 600; letter-spacing: 1px; color: #fff; }
+.sw-desc { display: block; margin: 6px 0 10px; font-size: 0.82rem; line-height: 1.7; color: rgba(255, 255, 255, 0.72); }
+.sw-meta { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 0.72rem; color: rgba(255, 255, 255, 0.5); }
+
+/* ===== 项目总简介 =====
+   普通一节：不 pin、不翻转，下翻到就能读。
+   注意它和「每个项目的信息」（卡片面板里那份）是两回事。 */
+.project-intro {
+  position: relative;
+  z-index: 2;
+  max-width: 720px;
+  width: calc(100% - 48px);
+  margin: 0 auto;
+  min-height: 100svh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 60px 0;
+}
+
+.pi-title {
+  margin: 0 0 24px;
+  font-size: 1rem;
+  font-weight: 300;
+  letter-spacing: 8px;
+  color: rgba(255, 255, 255, 0.9);
+  text-shadow: 0 1px 10px rgba(0, 0, 0, 0.5);
+}
+
+.pi-text {
+  margin: 0 0 16px;
+  font-size: 0.86rem;
+  line-height: 2;
+  letter-spacing: 1px;
+  color: rgba(255, 255, 255, 0.78);
+  text-shadow: 0 1px 8px rgba(0, 0, 0, 0.45);
+}
+
+.pi-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 22px 40px;
+  margin: 38px 0 0;
+  padding: 24px 0 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.pi-stats > div { text-align: left; }
+.pi-stats dt { font-size: 0.68rem; letter-spacing: 3px; color: rgba(255, 255, 255, 0.45); }
+.pi-stats dd { margin: 6px 0 0; font-family: 'Georgia', 'Times New Roman', serif; font-size: 1.5rem; color: #fff; }
+
+/* ==================== 项目展示：滚动叙事 ====================
+   长容器提供滚动距离，舞台 sticky 固定在视口里。
+   360vh 是「时间轴的可用长度」，不是动画时长；真正可用的滚动距离 = 容器高 − 视口高。 */
+/* ===== 项目展示 =====
+   也独占一屏、内容居中。卡片一次性完整展示 ——
+   不 pin、不进滚动进度、不做入场动画：滚到这一屏，五张卡就是齐的。 */
+.works {
+  position: relative;
+  z-index: 2;
+  max-width: 1180px;
+  width: calc(100% - 48px);
+  margin: 0 auto;
+  min-height: 100svh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 40px 0;
+}
+
+/* ---- 卡 ---- */
+.panels {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: center;
+  gap: clamp(10px, 1.6vw, 22px);
+}
+
+.panel {
+  display: block;
+  position: relative;
+  margin: 0;
+  width: clamp(140px, 17vw, 220px);
+  aspect-ratio: 3 / 4;
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.45);
+  cursor: pointer;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+.panel:hover { transform: translateY(-6px); box-shadow: 0 30px 70px rgba(0, 0, 0, 0.55); }
+
+/* 键盘走到卡片时给焦点环 —— 回车能打开详情面板 */
+.panel:focus-visible { outline: 2px solid rgba(255, 255, 255, 0.8); outline-offset: 3px; }
+
+.panel img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 500ms ease-out;   /* 照 Aemeath PhotoCard 的 group-hover:scale-105 */
+}
+.panel:hover img { transform: scale(1.05); }
+
+/* 常显：序号 + 项目名 */
+.pcopy {
+  position: absolute;
+  left: 0; right: 0; bottom: 0;
+  padding: 30px 12px 12px;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.78), transparent);
+}
+
+.pno {
+  display: block;
+  margin-bottom: 5px;
+  font-family: 'Georgia', 'Times New Roman', serif;
+  font-size: 0.68rem;
+  letter-spacing: 2px;
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.pname {
+  display: block;
+  overflow: hidden;
+  font-size: 0.78rem;
+  letter-spacing: 1px;
+  color: rgba(255, 255, 255, 0.94);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ---- 悬停/聚焦浮出的轻量信息（语言 + ★ + 一句提示）。
+       完整的信息（描述/时间/fork/协议/链接）在点开的面板里 —— 那里才是手机也能到的路径。 ---- */
+.pinfo {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 14px 10px;
+  text-align: center;
+  font-size: 0.7rem;
+  letter-spacing: 0.5px;
+  color: rgba(255, 255, 255, 0.8);
+  background: rgba(8, 10, 14, 0.78);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  opacity: 0;
+  transition: opacity 260ms ease;
+}
+.panel:hover .pinfo,
+.panel:focus-within .pinfo { opacity: 1; }
+
+.pmore { color: rgba(255, 255, 255, 0.5); font-size: 0.64rem; }
+
+/* 语言前面那颗小圆点，取该语言的品牌色 */
+.plang { display: inline-flex; align-items: center; gap: 4px; }
+.plang::before {
+  content: '';
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--dot, #888);
+}
+
+/* ---- 搜索反馈 / 截断提示：放在舞台里，pin 住的那段时间也看得到 ---- */
+.works-hint {
+  margin: 20px 0 0;
+  text-align: center;
+  font-size: 0.78rem;
+  letter-spacing: 2px;
+  color: rgba(255, 255, 255, 0.8);
+  text-shadow: 0 1px 8px rgba(0, 0, 0, 0.5);
+}
+.works-hint.dim { font-size: 0.72rem; color: rgba(255, 255, 255, 0.55); }
+.works-hint.dim a { color: rgba(255, 255, 255, 0.85); }
+
+/* ---- 点开的面板 ----
+   fixed 定位：居中盖在屏幕上，不参与卡片布局 —— 其他卡不动。 */
+.exp-mask {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(4, 6, 10, 0.55);
+  animation: expIn 0.22s ease both;
+}
+@keyframes expIn { from { opacity: 0; } to { opacity: 1; } }
+
+.expand {
+  position: relative;
+  display: flex;
+  gap: 26px;
+  width: min(720px, 88%);
+  max-height: 74svh;
+  overflow: auto;
+  padding: 26px;
+  border-radius: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: rgba(12, 15, 20, 0.92);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.5);
+  animation: expGrow 0.28s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+@keyframes expGrow { from { transform: scale(0.94); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+.exp-close {
+  position: absolute;
+  top: 12px; right: 12px;
+  width: 30px; height: 30px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(0, 0, 0, 0.3);
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+}
+.exp-close:hover { background: rgba(0, 0, 0, 0.55); color: #fff; }
+
+.exp-art {
+  flex: 0 0 200px;
+  aspect-ratio: 3 / 4;
+  border-radius: 12px;
+  background-size: cover;
+  background-position: center;
+}
+
+.exp-main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.exp-name { margin: 0 0 10px; font-size: 1.1rem; font-weight: 600; letter-spacing: 1px; color: #fff; }
+.exp-desc { margin: 0 0 18px; font-size: 0.84rem; line-height: 1.85; letter-spacing: 0.5px; color: rgba(255, 255, 255, 0.78); }
+
+.exp-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px 28px;
+  margin: 0 0 20px;
+  padding: 16px 0 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+}
+.exp-meta dt { font-size: 0.64rem; letter-spacing: 3px; color: rgba(255, 255, 255, 0.42); }
+.exp-meta dd { margin: 5px 0 0; font-size: 0.9rem; color: #fff; }
+
+.exp-link {
+  margin-top: auto;
+  align-self: flex-start;
+  font-size: 0.82rem;
+  letter-spacing: 1px;
+  color: #fff;
+  text-decoration: none;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.4);
+  padding-bottom: 2px;
+  transition: border-color 0.2s;
+}
+.exp-link:hover { border-color: #fff; }
+
+/* ---- 快门：两条竖横幅，竖图被放大裁成竖条 ---- */
+
+/* 关掉动效的用户：进场直接是终态，不播 */
+@media (prefers-reduced-motion: reduce) {
+  .projects-page.enter .hero-title,
+  .projects-page.enter .hero-sub,
+  .projects-page.enter .search-zone,
+  .projects-page.enter .tool-search { animation: none; }
+}
 
 @media (max-width: 860px) { .hero-title { font-size: 2rem; } }
-@media (max-width: 540px) { .repo-grid { grid-template-columns: 1fr; } .calendar-section { --cell: 8px; --gap: 2px; } }
+@media (max-width: 640px) {
+  /* 点开的面板在窄屏上堆成一栏 */
+  .expand { flex-direction: column; gap: 16px; padding: 20px; }
+  .exp-art { flex: none; width: 100%; max-width: 190px; aspect-ratio: 1 / 1; }
+}
+
+@media (max-width: 540px) { .calendar-section { --cell: 8px; --gap: 2px; } }
 </style>

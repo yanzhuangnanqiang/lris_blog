@@ -2,7 +2,7 @@
  * @Author       : Hidden Goose yanzhuangqiang@email.ncu.edu.cn
  * @Date         : 2026-05-28 11:17:34
  * @LastEditors  : Hidden Goose yanzhuangqiang@email.ncu.edu.cn
- * @LastEditTime : 2026-05-28 11:18:04
+ * @LastEditTime : 2026-09-26 15:57:58
  * @FilePath     : /myweb-Hiddengoose/src/views/TuberoseNotes.vue
  * @Description  : 如果你喜欢的话， 请你一定要保持好的心情继续喜欢下去😘🥰
 -->
@@ -46,8 +46,8 @@
         <PetalEffect v-if="theme.isPetalEnabled && !selectedNote" />
         <div v-if="selectedNote" class="reader-wrapper">
           <!-- 打开文章 → 音乐控件移到正文左边这一列 -->
-          <aside class="reader-aside"><NotesAside @pick="onAsidePick" /></aside>
-          <article class="reader-panel">
+          <aside class="reader-aside"><NotesAside :exclude-id="selectedId" @pick="onAsidePick" /></aside>
+          <article class="reader-panel" :style="panelStyle">
             <button class="rp-back" @click="selectedId = null">← 返回</button>
             <div v-if="coverImg" class="rp-cover" :style="{ backgroundImage: `url(${coverImg})` }"></div>
             <div class="rp-header">
@@ -80,8 +80,8 @@
       <!-- ===== 归档 ===== -->
       <template v-else-if="theme.currentNav === 'archive'">
         <div v-if="selectedNote" class="reader-wrapper">
-          <aside class="reader-aside"><NotesAside @pick="onAsidePick" /></aside>
-          <article class="reader-panel">
+          <aside class="reader-aside"><NotesAside :exclude-id="selectedId" @pick="onAsidePick" /></aside>
+          <article class="reader-panel" :style="panelStyle">
             <button class="rp-back" @click="selectedId = null">← 返回列表</button>
             <div v-if="coverImg" class="rp-cover" :style="{ backgroundImage: `url(${coverImg})` }"></div>
             <div class="rp-header">
@@ -287,6 +287,7 @@ import Sidebar from '@/components/tuberose/Sidebar.vue'
 import WelcomePanel from '@/components/tuberose/WelcomePanel.vue'
 import PetalEffect from '@/components/tuberose/PetalEffect.vue'
 import { useAppStore } from '@/stores/theme'
+import { useBgSettings } from '@/composables/useBgSettings'
 import { notes, renderNote } from '@/data/loadNotes'
 import TableOfContents from '@/components/tuberose/TableOfContents.vue'
 import openIcon from '@/assets/panel-right-open.svg'
@@ -315,6 +316,7 @@ function resolveCover(note) {
 }
 
 const theme = useAppStore()
+const { settings: bgSettings } = useBgSettings()
 const selectedId = ref(null)
 const selectedNote = computed(() => notes.find(n => n.id === selectedId.value) || null)
 const renderedHtml = ref('')
@@ -322,6 +324,11 @@ const renderedHtml = ref('')
 // 必须是 ref 而不是从 note 上读 —— notes 是普通数组（非 reactive），
 // 异步渲染完再挂 note.headings 不会触发更新。
 const tocHeadings = ref([])
+
+/** 阅读面板动态样式 —— 模糊度可调（CSS 变量方式，支持媒体查询覆盖） */
+const panelStyle = computed(() => ({
+  '--panel-blur': `${bgSettings.panelBlur}px`,
+}))
 
 // 目录只要 1 级标题（笔记正文从 ## 起，h3 是子节，不收）。
 // 抽成函数是因为这里有两个赋值点（缓存分支 / 首次渲染分支），
@@ -685,12 +692,12 @@ onBeforeRouteLeave(() => {
 /* ===== 阅读面板 ===== */
 .reader-panel {
   flex: 1 0 700px;
-  /* 900px 约合一行 52 个汉字（舒适区上限一般算到 50 左右，已经是偏宽的一档）*/
+  /* 900px 约合一行 52 个汉字（舒适区一般算到 50 左右，已经是偏宽的一档）*/
   max-width: 900px;
   padding: 40px 56px;
   background: rgba(30, 42, 50, 0.5);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
+  backdrop-filter: blur(var(--panel-blur, 20px));
+  -webkit-backdrop-filter: blur(var(--panel-blur, 20px));
   border: 1px solid rgba(255,255,255,0.1);
   border-radius: 18px;
   color: rgba(230,235,240,0.92);
@@ -757,6 +764,7 @@ onBeforeRouteLeave(() => {
    原来写的 1000px 只够 3 列，所以大屏再怎么宽也停在 3 列、两边越空越多。 */
 .archive-view {
   max-width: 1500px;
+  /* 左右各 24px。48px 是左右加起来：想改就写成 2N px（N = 每边留多少） */
   width: calc(100% - 48px);
   margin: 0 auto 60px;
 }
@@ -1119,16 +1127,12 @@ onBeforeRouteLeave(() => {
 
 .av-grid {
   display: grid;
-  /* 卡片宽度封顶 340px。
-     原来用 1fr，列数少的时候卡片反而更大 —— 2 列时被撑到 340~500px，
-     比 3 列的 321px 还大，所以"中屏"看着最粗。封顶后各档统一：
-       ≥1011px → 3 列 ~321px
-       660~1010 → 2 列 321~340px
-       < 660    → 1 列 ≤340px（居中，不再通铺）
-     min(320px,100%) 给极窄屏兜底，免得轨道比容器还宽撑出横向滚动。
-     多余空间交给 justify-content 居中，否则会全部堆在右边。 */
-  grid-template-columns: repeat(auto-fill, minmax(min(320px, 100%), 360px));
-  justify-content: center;
+  /* 卡片一律铺满：轨道上限用 1fr，随容器伸缩，不留居中空白。
+     用 auto-fit 而不是 auto-fill —— 空轨道会被收掉，所以只剩一张卡时它也铺满整行。
+     （原为封顶 360px + justify-content: center，窄容器里两边各空约 100px；
+     2026-09 按需求改成一律铺满，代价是宽屏只有两三张卡时每张会明显变宽。）
+     min(320px, 100%) 给极窄屏兜底，免得轨道比容器还宽撑出横向滚动。 */
+  grid-template-columns: repeat(auto-fit, minmax(min(320px, 100%), 1fr));
   gap: 18px;
 }
 
@@ -1375,7 +1379,6 @@ onBeforeRouteLeave(() => {
   .archive-view { width: calc(100% - 24px); }
   /* 只收间距，不再强制单列 —— 单列会把卡片压成 6:1 的横条，人脸全被裁掉 */
   .av-grid { gap: 12px; }
-  .av-search-box { max-width: 100%; }
 }
 
 /* ===== 移动端：去掉毛玻璃 =====

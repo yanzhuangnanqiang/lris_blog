@@ -63,6 +63,7 @@ import { notes } from '@/data/loadNotes'
 import { posts } from '@/data/loadPosts'
 import shuffleIcon from '@/assets/refresh-cw.svg'
 
+const props = defineProps({ excludeId: { type: String, default: null } })
 const emit = defineEmits(['pick'])
 
 const tags = computed(() => {
@@ -79,7 +80,7 @@ const PICK_COUNT = 3
 const picks = ref([])
 
 function roll() {
-  const pool = [...notes]
+  const pool = notes.filter(n => n.id !== props.excludeId)
   for (let i = pool.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1))
     ;[pool[i], pool[j]] = [pool[j], pool[i]]

@@ -14,6 +14,10 @@ dist-ssr
 coverage
 *.local
 
+# 临时 / 测试 / 废弃文件 —— 不参与构建，也不提交
+# （放项目里是为了集中一处，但必须忽略，否则 git status 会被它们刷满）
+temp/
+
 # 环境变量 — 防止 API Key 泄露
 .env
 .env.*

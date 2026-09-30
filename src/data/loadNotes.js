@@ -71,7 +71,7 @@ function plainText(html) {
 
 async function ensureRenderer() {
   if (_renderer) return _renderer
-  const [{ Marked, Renderer }, { markedHighlight }, hljsMod, bash, javascript, typescript, css, xml, python, json, markdown, yaml, powershell] = await Promise.all([
+  const [{ Marked, Renderer }, { markedHighlight }, hljsMod, bash, javascript, typescript, css, xml, python, json, markdown, yaml, powershell, kotlin, sql, java, ini] = await Promise.all([
     import('marked'),
     import('marked-highlight'),
     import('highlight.js/lib/core'),
@@ -85,6 +85,10 @@ async function ensureRenderer() {
     import('highlight.js/lib/languages/markdown'),
     import('highlight.js/lib/languages/yaml'),
     import('highlight.js/lib/languages/powershell'),
+    import('highlight.js/lib/languages/kotlin'),
+    import('highlight.js/lib/languages/sql'),
+    import('highlight.js/lib/languages/java'),
+    import('highlight.js/lib/languages/ini'),
   ])
   const hljs = hljsMod.default
   hljs.registerLanguage('bash', bash.default)
@@ -97,6 +101,10 @@ async function ensureRenderer() {
   hljs.registerLanguage('markdown', markdown.default)
   hljs.registerLanguage('yaml', yaml.default)
   hljs.registerLanguage('powershell', powershell.default)
+  hljs.registerLanguage('kotlin', kotlin.default)
+  hljs.registerLanguage('sql', sql.default)
+  hljs.registerLanguage('java', java.default)
+  hljs.registerLanguage('ini', ini.default)
   _renderer = new Marked(
     markedHighlight({
       highlight(code, lang) {

@@ -1,6 +1,6 @@
 <template>
   <div class="petals-container">
-    <div v-for="i in 15" :key="i" class="petal" :style="randomStyle()"></div>
+    <div v-for="i in 6" :key="i" class="petal" :style="randomStyle()"></div>
   </div>
 </template>
 

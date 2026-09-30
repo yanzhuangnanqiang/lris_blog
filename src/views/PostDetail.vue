@@ -13,6 +13,19 @@
         </div>
 
         <template v-else>
+          <!-- 两侧留白里的手帐贴纸。纯装饰：读屏跳过、鼠标穿透、窄屏不显示。
+               张数按正文字数定，沿文章纵向均匀铺开，左右交替。 -->
+          <img
+            v-for="(s, i) in stickerList"
+            :key="`${post.id}-${i}`"
+            class="sticker"
+            :class="i % 2 === 0 ? 'sticker-left' : 'sticker-right'"
+            :style="{ top: stickerTop(i) }"
+            :src="s"
+            alt=""
+            aria-hidden="true"
+          />
+
           <div class="post-hero">
             <img :src="post.photoSrc" :alt="post.title" />
           </div>
@@ -48,10 +61,25 @@ import TopBar from '@/components/app/TopBar.vue'
 import MusicDock from '@/components/Player/MusicDock.vue'
 import { posts } from '@/data/loadPosts'
 import GiscusComment from '@/components/app/GiscusComment.vue'
+import { randomStickers, stickerCountFor } from '@/data/stickers'
 
 const route = useRoute()
 const postIndex = computed(() => posts.findIndex(p => p.id === route.params.id))
 const post = computed(() => posts[postIndex.value] || null)
+
+/* 正文两侧的手帐贴纸：张数按正文字数定（封顶 4 张），随机挑不重复的，沿文章纵向均匀铺开。
+   ★ 用 computed 是安全的：computed 有缓存，只在依赖（这里的 post）变化时才重算 ——
+     所以「换文章才重掷、停留期间稳定」是它自带的，不需要 watch。
+     （反过来，写在方法里、或让模板每次调用，就会每次重渲染都重掷 → 闪。） */
+const stickerList = computed(() =>
+  randomStickers(stickerCountFor(post.value?.wordCount ?? 0))
+)
+
+/** 第 i 张贴纸挂在文章的百分之几处（n 张贴纸就均分成 n+1 段） */
+function stickerTop(i) {
+  const n = stickerList.value.length
+  return `${Math.round(((i + 1) / (n + 1)) * 100)}%`
+}
 const prevPost = computed(() => postIndex.value < posts.length - 1 ? posts[postIndex.value + 1] : null)
 const nextPost = computed(() => postIndex.value > 0 ? posts[postIndex.value - 1] : null)
 
@@ -106,10 +134,37 @@ watch(
 }
 
 .detail-container {
-  max-width: 720px;
-  width: min(720px, calc(100vw - 48px));
+  max-width: 860px;
+  width: min(860px, calc(100vw - 48px));
   margin: 0 auto;
   padding: 90px 0 40px;
+  position: relative;
+}
+
+/* ===== 两侧留白里的手帐贴纸 =====
+   绝对定位挂在正文容器上 → 跟着文章滚（不用 fixed：fixed 会飘在屏幕边缘、
+   还可能压到 TopBar 和音乐控件）。只有屏幕够宽、两侧真有留白时才显示。 */
+.sticker {
+  position: absolute;
+  width: 120px;
+  height: auto;
+  pointer-events: none;
+  user-select: none;
+  filter: drop-shadow(0 8px 18px rgba(0, 0, 0, 0.25));
+}
+
+/* 左右交替、各带一点倾斜 —— 摆正了反而像没贴好。（纵向位置由模板算，按张数均分） */
+.sticker-left { left: -152px; transform: rotate(-8deg); }
+.sticker-right { right: -152px; transform: rotate(7deg); }
+
+/* 窄屏（两侧留白不足 190px）直接不显示，硬塞会压到正文 */
+@media (max-width: 1240px) {
+  .sticker { display: none; }
+}
+
+/* CSS 关不掉动图的播放，只能不显示 —— 动图装饰正是这个偏好要治的东西 */
+@media (prefers-reduced-motion: reduce) {
+  .sticker { display: none; }
 }
 
 .back {

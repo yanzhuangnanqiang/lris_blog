@@ -1,5 +1,5 @@
 ---
-title: Git / GitHub 协作终极小抄（一次到位版）
+title: Git / GitHub 协作终极小抄
 date: 2025-04-02
 tags: [git,学习]
 summary: 可以帮你巩固知识的git 学习清单
