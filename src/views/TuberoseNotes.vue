@@ -61,9 +61,11 @@
             <!-- 评论区：每篇一个独立讨论串（term 用笔记 id），可在 .md 的
                  frontmatter 里写 comment: false 单独关掉。
                  dark 是因为这块在深色阅读面板里，标题区（不在 iframe 内）要翻成浅色。 -->
-            <GiscusComment
+            <WalineComment
               v-if="selectedNote.comment"
-              :term="`/notes/${selectedNote.id}`"
+              :key="selectedNote.id"
+              :path="`/notes/${selectedNote.id}`"
+              accent="purple"
               dark
             />
           </article>
@@ -95,9 +97,11 @@
             <!-- 评论区：每篇一个独立讨论串（term 用笔记 id），可在 .md 的
                  frontmatter 里写 comment: false 单独关掉。
                  dark 是因为这块在深色阅读面板里，标题区（不在 iframe 内）要翻成浅色。 -->
-            <GiscusComment
+            <WalineComment
               v-if="selectedNote.comment"
-              :term="`/notes/${selectedNote.id}`"
+              :key="selectedNote.id"
+              :path="`/notes/${selectedNote.id}`"
+              accent="purple"
               dark
             />
           </article>
@@ -282,7 +286,7 @@ import NotesMusic from '@/components/tuberose/NotesMusic.vue'
 import NotesAside from '@/components/tuberose/NotesAside.vue'
 import SiteStatsCard from '@/components/tuberose/SiteStatsCard.vue'
 import WidgetCard from '@/components/app/WidgetCard.vue'
-import GiscusComment from '@/components/app/GiscusComment.vue'
+import WalineComment from '@/components/app/WalineComment.vue'
 import Sidebar from '@/components/tuberose/Sidebar.vue'
 import WelcomePanel from '@/components/tuberose/WelcomePanel.vue'
 import PetalEffect from '@/components/tuberose/PetalEffect.vue'

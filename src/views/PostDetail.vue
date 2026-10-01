@@ -40,7 +40,9 @@
 
           <div class="post-body" v-html="post.bodyHtml"></div>
 
-          <GiscusComment :term="'/post/' + route.params.id" />
+          <!-- key 用文章 id：SPA 切上/下一篇时本组件被复用，必须强制重建
+               才能让评论组件重新挂载、加载对应文章的评论 -->
+          <WalineComment :key="route.params.id" :path="'/post/' + route.params.id" accent="green" />
 
           <nav class="post-nav">
             <router-link v-if="prevPost" :to="`/post/${prevPost.id}`" class="pn-btn prev">← 上一篇 · {{ prevPost.title }}</router-link>
@@ -60,7 +62,7 @@ import { useRoute } from 'vue-router'
 import TopBar from '@/components/app/TopBar.vue'
 import MusicDock from '@/components/Player/MusicDock.vue'
 import { posts } from '@/data/loadPosts'
-import GiscusComment from '@/components/app/GiscusComment.vue'
+import WalineComment from '@/components/app/WalineComment.vue'
 import { randomStickers, stickerCountFor } from '@/data/stickers'
 
 const route = useRoute()

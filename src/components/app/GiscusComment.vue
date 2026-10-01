@@ -14,7 +14,7 @@
 </template>
 
 <script setup>
-import { onMounted, watch, ref } from 'vue'
+import { onMounted, ref } from 'vue'
 
 const props = defineProps({
   term: { type: String, required: true },
@@ -52,15 +52,6 @@ function loadGiscus() {
 }
 
 onMounted(loadGiscus)
-
-watch(
-  () => props.term,
-  (t) => {
-    if (window.giscus?.sendMessage) {
-      window.giscus.sendMessage({ setConfig: { term: t } })
-    }
-  }
-)
 </script>
 
 <style scoped>
