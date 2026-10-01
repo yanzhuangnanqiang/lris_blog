@@ -700,8 +700,8 @@ onBeforeRouteLeave(() => {
   max-width: 900px;
   padding: 40px 56px;
   background: rgba(30, 42, 50, 0.5);
+  /* ⚠️ 只写标准属性 —— 手写 -webkit- 会让构建把标准那条丢掉（Firefox 就没模糊了） */
   backdrop-filter: blur(var(--panel-blur, 20px));
-  -webkit-backdrop-filter: blur(var(--panel-blur, 20px));
   border: 1px solid rgba(255,255,255,0.1);
   border-radius: 18px;
   color: rgba(230,235,240,0.92);
@@ -1395,10 +1395,12 @@ onBeforeRouteLeave(() => {
 @media (max-width: 860px) {
   /* 搜索框和标签栏已经不写 backdrop-filter 了（基础样式就没有），
      这两条覆盖已删 —— 留着只会在窄屏把底色换成另一套，白白不一致。 */
+  /* 窄屏保留毛玻璃，但只取一半：backdrop-filter 在移动端很贵，全量会把低端机拖卡。
+     底色同时降一点，否则 0.86 太实、糊了也看不出来。
+     ⚠️ 仍然只写标准属性，别手写 -webkit-。 */
   .reader-panel {
-    backdrop-filter: none;
-    -webkit-backdrop-filter: none;
-    background: rgba(30, 42, 50, 0.86);
+    backdrop-filter: blur(calc(var(--panel-blur, 20px) * 0.5));
+    background: rgba(30, 42, 50, 0.66);
   }
   /* 之字形窄屏不再左右交替，全部靠左一列（参考站也是 md 以下不交替） */
   .zz-spine { left: 17px; }
