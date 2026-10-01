@@ -14,8 +14,19 @@
 
         <!-- 帘布揭幕：每次刷新 / 新开标签播一次 -->
         <div class="curtain" :class="{ open: curtainOpen }" aria-hidden="true">
-          <div class="leaf leaf-left"><img :src="leafLeft" alt="" /></div>
-          <div class="leaf leaf-right"><img :src="leafRight" alt="" /></div>
+          <!-- 用 <picture> 按断点选图：浏览器只会下载匹配的那一组，不会两组都拉 -->
+          <div class="leaf leaf-left">
+            <picture>
+              <source media="(max-width: 860px)" :srcset="leafLeftMobile" />
+              <img :src="leafLeft" alt="" />
+            </picture>
+          </div>
+          <div class="leaf leaf-right">
+            <picture>
+              <source media="(max-width: 860px)" :srcset="leafRightMobile" />
+              <img :src="leafRight" alt="" />
+            </picture>
+          </div>
         </div>
 
         <div class="hero-content" :class="{ show: curtainOpen, fading: scrollProgress > 0.3 }">
@@ -128,8 +139,14 @@ import LatestNotesCard from '@/components/home/LatestNotesCard.vue'
 import { whispers } from '@/data/thoughts'
 import { posts } from '@/data/loadPosts'
 import heroBg from '@/assets/optimized/xiaguang.webp'
-import leafLeft from '@/assets/optimized/左.webp'
+// 左帘已换成第三代（叶幕-左-3）；右帘仍是上一代，左右画风暂时不一致，等右图再统一
+import leafLeft from '@/assets/optimized/叶幕-左-3.webp'
 import leafRight from '@/assets/optimized/右.webp'
+// 移动端换竖构图那一对（横图硬填竖屏会被裁掉 74%）。
+// 这两张是镜像的：左帘「左实右虚」、右帘「左虚右实」，
+// 所以闭合时两张在中线处互补交叉，不会像实心图那样叠出糊边。
+import leafLeftMobile from '@/assets/optimized/移-左2.webp'
+import leafRightMobile from '@/assets/optimized/移-右2.webp'
 import chevronDown from '@/assets/chevron-down.svg'
 
 const router = useRouter()
@@ -474,11 +491,45 @@ onBeforeUnmount(() => {
   will-change: transform;
 }
 
+/* <picture> 默认是 inline，得撑满，里面的 img 才能按 100% 算 */
+.leaf picture {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
 .leaf img {
   width: 100%;
   height: 100%;
   object-fit: cover;
   object-position: center;
+  /* 原图偏暗，轻提一档（多提会发白） */
+  filter: brightness(1.12) saturate(0.98);
+  /* 像树枝一样随风轻摆。
+     ⚠️ 必须加在 img 上，不能加在 .leaf 上 —— .leaf 的 transform 留给"滑走"，
+     挤在同一个元素上会互相覆盖。scale 留 6% 余量，免得摆动时露出边缘。 */
+  transform-origin: 50% 100%;
+  will-change: transform;
+  animation: leaf-sway 7s ease-in-out infinite;
+}
+
+/* 四段不规则摆动（跟 LeafFall 的 leafSway 同一路子）——
+   规律的一来一回看久了发机械，四段才像真树枝被风推。 */
+@keyframes leaf-sway {
+  0%, 100% { transform: scale(1.06) rotate(0deg) translateX(0); }
+  25%      { transform: scale(1.06) rotate(0.9deg) translateX(0.5%); }
+  50%      { transform: scale(1.06) rotate(-0.45deg) translateX(-0.3%); }
+  75%      { transform: scale(1.06) rotate(0.3deg) translateX(0.15%); }
+}
+
+/* 左右错开相位，不然两片像被同一阵风吹、显得假 */
+.leaf-right img {
+  animation-duration: 8.6s;
+  animation-delay: -2.4s;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .leaf img { animation: none; }
 }
 
 /* 102% 而不是 100%：留余量，免得边缘差 1px 漏缝 */
@@ -489,6 +540,9 @@ onBeforeUnmount(() => {
 .curtain.open .leaf-right {
   transform: translateX(102%);
 }
+
+/* 移动端没有单独的揭幕规则：走上面同一套左右滑。
+   只换了图（竖构图那两张，见 <picture>）。 */
 
 .hero-content {
   position: relative;
