@@ -178,6 +178,8 @@
           <div><dt>最近更新</dt><dd>{{ projectStats.latest }}</dd></div>
         </dl>
       </section>
+
+      <SiteFooter />
     </div>
   </div>
 </template>
@@ -185,6 +187,7 @@
 <script setup>
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import TopBar from '@/components/app/TopBar.vue'
+import SiteFooter from '@/components/app/SiteFooter.vue'
 import MusicDock from '@/components/Player/MusicDock.vue'
 import xinliBg from '@/assets/optimized/xinli.webp'
 import { loadContributions, irisColorOf } from '@/data/contributions'

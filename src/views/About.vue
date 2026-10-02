@@ -47,13 +47,12 @@
             <h2 class="name">Hidden Goose</h2>
             <p class="bio">于林间初见，在代码中相逢。</p>
             <p class="desc">
-              一个相信文字与代码都有温度的人。喜欢把复杂的东西拆成简单的零件，再重新组装成别人能看懂的样子。
-              目前在前端与算法的交界处游荡，偶尔写点随笔，记录那些「原来可以这样」的瞬间。
+              南昌大学一个普普通通的计科学生，只是喜欢做点东西。这里是存放思考和随笔的地方，也会分享一些小项目和笔记。希望你能在这里找到有趣的东西。
             </p>
             <div class="meta-row">
-              <span class="meta-item"><b>7</b> 仓库</span>
-              <span class="meta-item"><b>3</b> 关注者</span>
-              <span class="meta-item"><b>4</b> 星标</span>
+              <span class="meta-item"><b>{{ ghStats?.repos ?? '—' }}</b> 仓库</span>
+              <span class="meta-item"><b>{{ ghStats?.followers ?? '—' }}</b> 关注者</span>
+              <span class="meta-item"><b>{{ ghStats?.stars ?? '—' }}</b> 星标</span>
             </div>
           </div>
         </section>
@@ -94,7 +93,7 @@
               <div class="t-content glass-card">
                 <span class="t-time">2026/5/13 — 至今</span>
                 <h4>个人博客「林间初见」</h4>
-                <p>用 Vue 前端框架做的静态博客,尝试在github上发布。集成了音乐播放器、GitHub 动态、RSS 订阅。</p>
+                <p>用 Vue 搭的静态博客，发布在 GitHub 上。集成了音乐播放器、GitHub 动态和 RSS 订阅。</p>
               </div>
             </div>
             <div class="t-item">
@@ -102,7 +101,7 @@
               <div class="t-content glass-card">
                 <span class="t-time">更早</span>
                 <h4>开始做项目</h4>
-                <p>在大一下学期,因为兴趣做了一个大鱼吃小鱼的游戏,花了许多天时间吧</p>
+                <p>大一下学期，因为兴趣写了一个大鱼吃小鱼的小游戏，前后花了不少天。</p>
               </div>
             </div>
           </div>
@@ -127,19 +126,25 @@
           <div class="glass-card contact-card">
             <p class="contact-hint">有想法、问题，或者单纯想聊聊？</p>
             <div class="contact-links">
-              <a href="https://github.com/yanzhuangnanqiang" target="_blank" rel="noreferrer" class="c-link">
-                <span class="c-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg></span>
-                GitHub
-              </a>
-              <a href="mailto:your@email.com" class="c-link">
-                <span class="c-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg></span>
-                Email
+              <!-- 复用 contacts.js —— 和页脚同一份数据，不会再出现"两处不同步"
+                   （这里原本的邮箱还是占位符 your@email.com） -->
+              <a
+                v-for="c in contacts"
+                :key="c.name"
+                :href="c.url"
+                class="c-link"
+                :target="c.url.startsWith('mailto:') ? undefined : '_blank'"
+                :rel="c.url.startsWith('mailto:') ? undefined : 'noreferrer'"
+              >
+                <span class="c-icon"><img :src="contactIcons[c.icon]" alt="" /></span>
+                {{ c.name }}
               </a>
             </div>
           </div>
         </section>
 
         <footer class="end-cap">于林间初见，在代码中相逢</footer>
+        <SiteFooter />
       </main>
     </div>
   </div>
@@ -148,11 +153,62 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import TopBar from '@/components/app/TopBar.vue'
+import SiteFooter from '@/components/app/SiteFooter.vue'
 import MusicDock from '@/components/Player/MusicDock.vue'
 import aboutBg from '@/assets/optimized/saiset/竖屏/2.webp'
+import { contacts } from '@/data/contacts'
+/* 联系方式图标：复用 assets 里现成的三个 svg（和 IconLink 同一套做法） */
+import iconGithub from '@/assets/github.svg'
+import iconBilibili from '@/assets/bilibili.svg'
+import iconMail from '@/assets/mail.svg'
 
 import avatarImg from '@/assets/optimized/avatar.webp'
 const avatar = avatarImg
+
+const contactIcons = { github: iconGithub, bilibili: iconBilibili, mail: iconMail }
+
+/* 「简介」卡片上那三个数字：从 GitHub 现拉。
+   优先读项目页存过的 sessionStorage 缓存 —— 未认证的 GitHub API 只有 60 次/小时，
+   不宜每次进关于页都打接口。拿不到就保持 null → 模板显示「—」，不显示假数字。 */
+const ghStats = ref(null)
+
+async function loadGithubStats() {
+  const USER = 'yanzhuangnanqiang'
+  try {
+    let repos = null
+    try {
+      const cached = sessionStorage.getItem('projectRepos')
+      if (cached) repos = JSON.parse(cached)
+    } catch { /* 缓存坏了就当没有 */ }
+
+    if (!Array.isArray(repos)) {
+      const res = await fetch(`https://api.github.com/users/${USER}/repos?sort=updated&per_page=100`)
+      if (!res.ok) throw new Error(String(res.status))
+      repos = (await res.json()).filter((r) => !r.fork)
+      sessionStorage.setItem('projectRepos', JSON.stringify(repos))
+    }
+
+    let followers = null
+    try {
+      const cachedUser = sessionStorage.getItem('githubUser')
+      if (cachedUser) followers = JSON.parse(cachedUser).followers
+    } catch { /* 同上 */ }
+
+    if (typeof followers !== 'number') {
+      const res = await fetch(`https://api.github.com/users/${USER}`)
+      if (res.ok) {
+        followers = (await res.json()).followers
+        sessionStorage.setItem('githubUser', JSON.stringify({ followers }))
+      }
+    }
+
+    ghStats.value = {
+      repos: repos.length,
+      stars: repos.reduce((n, r) => n + (r.stargazers_count || 0), 0),
+      followers,
+    }
+  } catch { /* 超时 / 限流都算了，保持 null → 显示 — */ }
+}
 
 const scrollerRef = ref(null)
 const scrollPct = ref(0)
@@ -226,6 +282,7 @@ function scrollToSection(id) {
 onMounted(() => {
   // 初始计算一次
   onScroll()
+  loadGithubStats()
 })
 </script>
 
@@ -402,6 +459,8 @@ onMounted(() => {
   box-shadow: 0 4px 12px rgba(91,63,211,0.1);
 }
 .c-icon { display: flex; align-items: center; opacity: 0.8; }
+/* 图标现在是 <img>（assets 里的 svg），得显式给尺寸 —— 原来是内联 svg 自带 width/height */
+.c-icon img { width: 18px; height: 18px; display: block; }
 
 /* ===== 结尾 ===== */
 .end-cap { text-align: center; padding: 40px 0; color: rgba(140,130,160,0.3); font-size: 0.78rem; letter-spacing: 4px; }

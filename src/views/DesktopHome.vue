@@ -115,6 +115,8 @@
           </footer>
         </div>
       </section>
+
+      <SiteFooter />
     </div>
   </div>
 </template>
@@ -129,6 +131,7 @@ let introPlayed = false
 import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
 import { useRouter, onBeforeRouteLeave } from 'vue-router'
 import TopBar from '@/components/app/TopBar.vue'
+import SiteFooter from '@/components/app/SiteFooter.vue'
 import MusicDock from '@/components/Player/MusicDock.vue'
 import IconLink from '@/components/app/IconLink.vue'
 import PetalEffect from '@/components/tuberose/PetalEffect.vue'

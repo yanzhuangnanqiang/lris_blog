@@ -143,6 +143,7 @@
         </section>
 
         <footer class="end-cap">林间初见 · 难忘夏光</footer>
+        <SiteFooter />
       </div>
 
       <button v-if="showBackTop" class="back-top" @click="scrollToTop">↑</button>
@@ -161,6 +162,7 @@
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import TopBar from '@/components/app/TopBar.vue'
+import SiteFooter from '@/components/app/SiteFooter.vue'
 import MusicDock from '@/components/Player/MusicDock.vue'
 import { gallery, plans, lifeJournal } from '@/data/shares'
 import yaolanBg from '@/assets/optimized/yaolan.webp'

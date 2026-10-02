@@ -65,6 +65,7 @@
         </template>
 
         <footer class="end-cap">林间初见 · 难忘夏光</footer>
+        <SiteFooter />
       </div>
     </div>
   </div>
@@ -74,6 +75,7 @@
 import { computed, watch, nextTick } from 'vue'
 import { useRoute } from 'vue-router'
 import TopBar from '@/components/app/TopBar.vue'
+import SiteFooter from '@/components/app/SiteFooter.vue'
 import MusicDock from '@/components/Player/MusicDock.vue'
 import { posts } from '@/data/loadPosts'
 import WalineComment from '@/components/app/WalineComment.vue'
