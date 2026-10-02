@@ -139,9 +139,9 @@ import LatestNotesCard from '@/components/home/LatestNotesCard.vue'
 import { whispers } from '@/data/thoughts'
 import { posts } from '@/data/loadPosts'
 import heroBg from '@/assets/optimized/xiaguang.webp'
-// 左帘已换成第三代（叶幕-左-3）；右帘仍是上一代，左右画风暂时不一致，等右图再统一
+// 帘布已整体换成第三代（左右各一张横构图，2080×1152）
 import leafLeft from '@/assets/optimized/叶幕-左-3.webp'
-import leafRight from '@/assets/optimized/右.webp'
+import leafRight from '@/assets/optimized/叶幕-右-3.webp'
 // 移动端换竖构图那一对（横图硬填竖屏会被裁掉 74%）。
 // 这两张是镜像的：左帘「左实右虚」、右帘「左虚右实」，
 // 所以闭合时两张在中线处互补交叉，不会像实心图那样叠出糊边。

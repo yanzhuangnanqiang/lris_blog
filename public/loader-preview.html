@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>开屏 loader 预览</title>
+<style>
+  html, body { margin: 0; height: 100%; }
+  body { background: #f5f7f3; }
+
+  /* ===== 下面这段和 index.html 里的 #loader 保持一致，改了记得两边同步 ===== */
+  #loader {
+    position: fixed; inset: 0;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    background: #f5f7f3;
+    z-index: 9999;
+    transition: opacity 0.4s ease;
+  }
+  #loader.hide { opacity: 0; pointer-events: none; }
+
+  #loader .loader-badge {
+    position: relative;
+    width: 100px; height: 100px;
+  }
+  #loader .loader-badge img {
+    width: 100px; height: 100px;
+    border-radius: 50%;
+    display: block;
+  }
+  #loader .loader-badge::after {
+    content: '';
+    position: absolute; inset: -8px;
+    border-radius: 50%;
+    border: 3px solid rgba(111, 66, 193, 0.16);
+    border-top-color: #6f42c1;
+    animation: loader-spin 0.9s linear infinite;
+  }
+  @keyframes loader-spin { to { transform: rotate(360deg); } }
+  #loader p {
+    margin-top: 20px;
+    font-size: 0.85rem; color: rgba(0,0,0,0.3);
+    letter-spacing: 4px;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    #loader .loader-badge::after { animation: none; }
+  }
+  /* ===== 以上是跟线上一致的部分 ===== */
+
+  /* 预览页自己的控制条 */
+  .ctrl {
+    position: fixed; left: 50%; bottom: 28px; transform: translateX(-50%);
+    z-index: 10000;
+    display: flex; gap: 10px; align-items: center;
+    padding: 10px 16px;
+    background: rgba(255,255,255,0.82);
+    border: 1px solid rgba(0,0,0,0.08);
+    border-radius: 999px;
+    backdrop-filter: blur(10px);
+    font: 13px/1.4 system-ui, "Microsoft YaHei", sans-serif;
+    color: #333;
+  }
+  .ctrl button {
+    font: inherit; cursor: pointer;
+    padding: 6px 14px; border-radius: 999px;
+    border: 1px solid rgba(111,66,193,0.35);
+    background: #fff; color: #6f42c1;
+  }
+  .ctrl button:hover { background: #6f42c1; color: #fff; }
+  .ctrl .size { color: #888; font-size: 12px; }
+</style>
+</head>
+<body>
+
+  <!-- 跟 index.html 里那段一模一样 -->
+  <div id="loader">
+    <div class="loader-badge">
+      <img id="loaderImg" src="/loader.webp" alt="" width="100" height="100" />
+    </div>
+    <p>林间初见</p>
+  </div>
+
+  <div class="ctrl">
+    <button id="replay">重播一次（淡出 → 再出现）</button>
+    <button id="swap">切换轻量版</button>
+    <span class="size" id="sizeInfo">当前：loader.webp（120px 源 / 55KB）</span>
+  </div>
+
+<script>
+  var loader = document.getElementById('loader')
+  var img = document.getElementById('loaderImg')
+  var sizeInfo = document.getElementById('sizeInfo')
+  var lite = false
+
+  document.getElementById('replay').onclick = function () {
+    loader.classList.add('hide')
+    setTimeout(function () { loader.classList.remove('hide') }, 700)
+  }
+
+  document.getElementById('swap').onclick = function () {
+    lite = !lite
+    img.src = lite ? '/loader-lite.webp' : '/loader.webp'
+    sizeInfo.textContent = lite
+      ? '当前：loader-lite.webp（100px 源 / 36.5KB）'
+      : '当前：loader.webp（120px 源 / 55KB）'
+  }
+</script>
+</body>
+</html>
