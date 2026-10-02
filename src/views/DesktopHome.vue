@@ -29,7 +29,7 @@
           </div>
         </div>
 
-        <div class="hero-content" :class="{ show: curtainOpen, fading: scrollProgress > 0.3 }">
+        <div class="hero-content" :class="{ show: contentShown, fading: scrollProgress > 0.3 }">
           <h1 class="hero-title" :style="{ color: titleColor }" @click="cycleColor">林间初见</h1>
           <p class="hero-line1">{{ typedLine1 }}<span v-if="cursorLine === 1" class="cursor">|</span></p>
           <p class="hero-line2">{{ typedLine2 }}<span v-if="cursorLine === 2" class="cursor">|</span></p>
@@ -167,6 +167,9 @@ const mistLifted = ref(false)
 const TYPED_KEY = 'homeTyped'
 const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
 const curtainOpen = ref(reduceMotion || introPlayed)
+/* 内容浮现：**等帘布滑完再开始**（帘布 800ms 起滑、1.8s 滑完）。
+   沿用和 curtainOpen 同一套页面级标记：从别的页切回首页时是 true → 内容直接显示、不演。 */
+const contentShown = ref(reduceMotion || introPlayed)
 
 let scrollerEl = null
 
@@ -328,6 +331,9 @@ onMounted(() => {
 
   if (playIntro) {
     setTimeout(() => { curtainOpen.value = true }, 800)
+    // 帘布 800ms 起滑、1.8s 滑完；内容提前到 1600ms 开始浮现 ——
+    // 这时帘布滑到一半、两侧已经让开了，看起来像"被帘布揭开"
+    setTimeout(() => { contentShown.value = true }, 1600)
   }
 
   // 打字沿用原来的「同一会话只播一次」，不随帘布一起重置；
@@ -336,7 +342,8 @@ onMounted(() => {
     typedLine1.value = fullLine1
     typedLine2.value = fullLine2
   } else {
-    const typingDelay = playIntro ? 1800 : 600
+    // 开场时等「帘布滑完(2600) + 内容浮现完(0.6s)」再打字，否则字是在不可见的内容里打的
+    const typingDelay = playIntro ? 3200 : 600
     setTimeout(() => startTyping().then(() => sessionStorage.setItem(TYPED_KEY, '1')), typingDelay)
   }
 })
@@ -551,10 +558,12 @@ onBeforeUnmount(() => {
   transition: opacity 0.6s ease, transform 0.6s ease;
   margin-top: 100px;
   opacity: 0;
+  transform: translateY(28px); /* 起点偏下 → .show 时浮回原位，「从下往上浮现」 */
 }
 
 .hero-content.show {
   opacity: 1;
+  transform: translateY(0);
 }
 
 /* 必须排在 .show 之后：滚动淡出要压过 show 的 opacity: 1 */
@@ -718,6 +727,13 @@ onBeforeUnmount(() => {
 .float-1 { animation: spotIn 1s ease both, driftB 5.5s ease-in-out 1.1s infinite, glow1 5s ease-in-out 1s infinite; }
 .float-2 { animation: spotIn 1s ease both, driftA 6s ease-in-out 1.4s infinite, glow0 5.5s ease-in-out 1.6s infinite; }
 .float-3 { animation: spotIn 1s ease both, driftB 5.2s ease-in-out 0.9s infinite, glow1 4.8s ease-in-out 0.6s infinite; }
+
+/* ---- 先标题、后气泡 ----
+   这几个动画原本一挂载就播，而那时 .hero-content 还是 opacity: 0 ——
+   等于"在看不见的地方演完了"。所以把它们挂到 .show 上：内容浮现之后才进场，
+   再推迟 0.45s 让标题先到位。（一个值会套用到列表里所有动画，飘动/呼吸晚 0.45s 起步，无感） */
+.hero-content:not(.show) .spot { animation: none; }
+.hero-content.show .spot { animation-delay: 0.45s; }
 
 @keyframes glow0 {
   0%, 100% { box-shadow: 0 0 36px rgba(255,255,255,0.3), 0 0 14px rgba(255,255,255,0.2); }
