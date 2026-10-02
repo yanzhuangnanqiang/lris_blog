@@ -53,18 +53,66 @@
           @keyframes loader-spin { to { transform: rotate(360deg); } }
           #loader p {
             margin-top: 20px;
+            /* 打字时句子长度一直在变，留个高度免得下方元素跟着跳 */
+            min-height: 1.3em;
             font-size: 0.85rem; color: rgba(0,0,0,0.3);
             letter-spacing: 4px;
           }
+          /* 打字光标 */
+          #loader p::after {
+            content: '|';
+            margin-left: 3px;
+            opacity: .45;
+            animation: caret-blink 1s steps(1) infinite;
+          }
+          @keyframes caret-blink { 50% { opacity: 0; } }
           /* 尊重系统的"减弱动态"：环不转，动画图也停 */
           @media (prefers-reduced-motion: reduce) {
             #loader .loader-badge::after { animation: none; }
+            #loader p::after { animation: none; }
           }
         </style>
         <div class="loader-badge">
           <img src="/loader-lite.webp" alt="" width="100" height="100" />
         </div>
-        <p>林间初见</p>
+        <p id="loader-text"></p>
+        <script>
+          // 加载页那句文案：打字循环 —— 打完停 1s → 清空 → 打下一句，来回循环。
+          // 放在这里（而不是 main.js）是因为加载页要在 Vue 启动**之前**就动起来。
+          (function () {
+            var el = document.getElementById('loader-text')
+            if (!el) return
+
+            var LINES = ['林间初见', '写下随想 · 记下笔记 · 分享生活']
+            var TYPE_MS = 70    // 每个字（别调太大：加载页活得短，否则第二句根本打不完）
+            var HOLD_MS = 1000  // 打完停多久
+
+            // 尊重"减弱动态"：不逐字打，直接显示信息量最大的那句（介绍）
+            if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+              el.textContent = LINES[LINES.length - 1]
+              return
+            }
+
+            var li = 0
+            var ci = 0
+            function step() {
+              if (!el.isConnected) return // 加载页已被移除，停掉计时器
+              var line = LINES[li]
+              if (ci < line.length) {
+                el.textContent = line.slice(0, ++ci)
+                setTimeout(step, TYPE_MS)
+              } else {
+                li = (li + 1) % LINES.length
+                ci = 0
+                setTimeout(function () {
+                  el.textContent = ''
+                  step()
+                }, HOLD_MS)
+              }
+            }
+            step()
+          })()
+        </script>
       </div>
     <script type="module" src="/src/main.js"></script>
   </body>

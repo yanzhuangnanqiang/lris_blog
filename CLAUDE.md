@@ -79,4 +79,5 @@ posts 在 `src/posts/`，notes 在 `src/data/notes/`，均 eager glob 加载。
 - 主题 store：`src/stores/theme.js`
 - 文章加载：`src/data/loadPosts.js`
 - 笔记加载：`src/data/loadNotes.js`
+- 首屏预加载：`src/preload.js` —— **换了某个页面的首屏大图（背景/帘布/封面），要回来同步那张路由表**
 - 项目总结：`PROJECT-SUMMARY.md`
