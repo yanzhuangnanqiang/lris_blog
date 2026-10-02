@@ -15,8 +15,12 @@
         if (r) { sessionStorage.removeItem('r'); history.replaceState(null, '', r); }
       })();
     </script>
-    <div id="app">
-      <div id="loader">
+    <div id="app"></div>
+
+    <!-- ⚠️ 加载页必须放在 #app **外面**：
+         Vue 的 app.mount('#app') 会清空容器内容，放里面的话加载页在挂载那一刻
+         就被抹掉了（淡出根本没机会跑），后面等路由 chunk 的那段就是白屏。 -->
+    <div id="loader">
         <style>
           #loader {
             position: fixed; inset: 0;
@@ -62,7 +66,6 @@
         </div>
         <p>林间初见</p>
       </div>
-    </div>
     <script type="module" src="/src/main.js"></script>
   </body>
 </html>

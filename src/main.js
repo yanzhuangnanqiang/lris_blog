@@ -11,18 +11,32 @@ import { createPinia } from 'pinia'
 import router from './router'
 import App from './App.vue'
 import { inject } from '@vercel/analytics'
+import { preloadRouteAssets } from './preload'
 import './style.css'
 
 inject()
+
+// 趁开屏加载页还显示着，先把当前路由的首屏大图下起来（和 JS 并行，不等路由 chunk）
+preloadRouteAssets()
 
 const app = createApp(App)
 app.use(createPinia())
 app.use(router)
 app.mount('#app')
 
-// 移除加载页
-const loader = document.getElementById('loader')
-if (loader) {
+// 移除加载页。
+// ★ 必须等 router.isReady()：所有页面都是懒加载，mount 完成时首页 chunk 还没到，
+//   这时撤掉加载页会露出一段空白。isReady 之后首屏内容才算真的画好。
+// ★ 4s 兜底：万一 chunk 加载失败，不能让用户永远卡在加载页。
+let loaderGone = false
+function hideLoader() {
+  if (loaderGone) return
+  loaderGone = true
+  const loader = document.getElementById('loader')
+  if (!loader) return
   loader.classList.add('hide')
   setTimeout(() => loader.remove(), 500)
 }
+
+router.isReady().then(hideLoader)
+setTimeout(hideLoader, 4000)
