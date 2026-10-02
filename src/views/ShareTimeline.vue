@@ -14,6 +14,19 @@
       </section>
 
       <div class="container">
+        <!-- 两侧留白里的手帐贴纸。纯装饰：读屏跳过、鼠标穿透、窄屏不显示 -->
+        <img
+          v-for="(s, i) in sideStickers"
+          :key="i"
+          class="sticker"
+          :class="i % 2 === 0 ? 'sticker-left' : 'sticker-right'"
+          :style="{ top: stickerTop(i) }"
+          :src="s"
+          alt=""
+          aria-hidden="true"
+          loading="lazy"
+        />
+
         <!-- 三张堆叠预览 -->
         <section class="block">
           <h2 class="section-title">🖼️ 图片分享</h2>
@@ -152,6 +165,18 @@ import MusicDock from '@/components/Player/MusicDock.vue'
 import { gallery, plans, lifeJournal } from '@/data/shares'
 import yaolanBg from '@/assets/optimized/yaolan.webp'
 import { useReveal } from '@/composables/useReveal'
+import { randomStickers } from '@/data/stickers'
+
+/* 两侧留白里的手帐贴纸（纯装饰）。分享页没有正文字数，固定 3 张（正好三个 block）。
+   ★ 写在 setup 顶层调用一次 —— 放模板/computed 里会每次重渲染都重掷，贴纸会闪
+     （同 stickers.js 里的告诫）。 */
+const sideStickers = randomStickers(3)
+
+/** 第 i 张贴纸挂在页面的百分之几处（n 张均分成 n+1 段，与文章页一致） */
+function stickerTop(i) {
+  const n = sideStickers.length
+  return `${Math.round(((i + 1) / (n + 1)) * 100)}%`
+}
 
 const router = useRouter()
 function loadChecks(key, len) {
@@ -331,7 +356,32 @@ function bg(i) {
 .hero-sub { margin-top: 12px; font-size: 0.95rem; color: rgba(255,255,255,0.7); letter-spacing: 4px; text-shadow: 0 1px 3px rgba(0,0,0,0.25); }
 
 /* ---- 主体 ---- */
-.container { max-width: 720px; width: min(720px, calc(100vw - 48px)); margin: 0 auto; padding: 50px 0 40px; }
+/* position: relative 是给两侧贴纸当定位父级的（原来没有）。
+   已确认容器内没有依赖它"非定位"的 absolute 元素。 */
+.container { position: relative; max-width: 720px; width: min(720px, calc(100vw - 48px)); margin: 0 auto; padding: 50px 0 40px; }
+
+/* ===== 两侧留白里的手帐贴纸 =====
+   绝对定位挂在 .container 上 → 跟着 .scroller 滚（不能用 fixed：会飘在屏幕边缘）。
+   列宽只有 720px，每侧贴纸要占 152 + 120 = 272px，所以视口 ≥ ~1024px 才放得下 —— 门槛取 1100。 */
+.sticker {
+  position: absolute;
+  width: 120px;
+  height: auto;
+  pointer-events: none;
+  user-select: none;
+  filter: drop-shadow(0 8px 18px rgba(0, 0, 0, 0.25));
+}
+.sticker-left { left: -152px; transform: rotate(-8deg); }
+.sticker-right { right: -152px; transform: rotate(7deg); }
+
+@media (max-width: 1100px) {
+  .sticker { display: none; }
+}
+
+/* 动图装饰正是这个偏好要治的东西，不显示 */
+@media (prefers-reduced-motion: reduce) {
+  .sticker { display: none; }
+}
 .block { margin-top: 40px; }
 .section-title { font-weight: 400; letter-spacing: 2px; font-size: 1.05rem; color: var(--text-dark); text-align: left; margin-bottom: 16px; }
 

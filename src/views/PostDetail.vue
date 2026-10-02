@@ -24,6 +24,7 @@
             :src="s"
             alt=""
             aria-hidden="true"
+            loading="lazy"
           />
 
           <div class="post-hero">
@@ -39,6 +40,19 @@
           </div>
 
           <div class="post-body" v-html="post.bodyHtml"></div>
+
+          <!-- 文末落款贴纸：只在小屏出现（桌面走两侧那套）。
+               纯装饰：读屏跳过、鼠标穿透。loading=lazy：桌面上不显示时不会被下载 -->
+          <div class="sticker-footer">
+            <img
+              v-for="(s, i) in stickerList"
+              :key="`f-${i}`"
+              :src="s"
+              alt=""
+              aria-hidden="true"
+              loading="lazy"
+            />
+          </div>
 
           <!-- key 用文章 id：SPA 切上/下一篇时本组件被复用，必须强制重建
                才能让评论组件重新挂载、加载对应文章的评论 -->
@@ -167,6 +181,37 @@ watch(
 /* CSS 关不掉动图的播放，只能不显示 —— 动图装饰正是这个偏好要治的东西 */
 @media (prefers-reduced-motion: reduce) {
   .sticker { display: none; }
+}
+
+/* ===== 文末落款贴纸（只在小屏）=====
+   正文留给以后要放的照片，所以贴纸不插在段落之间，统一排到文章末尾。
+   和两侧那套天然互斥：桌面只显示两侧、小屏只显示这行，任何宽度下都只有一套。 */
+.sticker-footer { display: none; }
+
+@media (max-width: 1240px) {
+  .sticker-footer {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    justify-content: flex-end; /* 偏右，沿用之前定的手帐感 */
+    margin-top: 36px;
+  }
+  .sticker-footer img {
+    width: 56px;
+    /* 显式尺寸（贴纸是正方形）：配合 loading=lazy，加载前后不跳布局 */
+    height: 56px;
+    transform: rotate(-6deg);
+    filter: drop-shadow(0 6px 14px rgba(0, 0, 0, 0.22));
+    pointer-events: none;
+    user-select: none;
+  }
+  /* 交替倾斜，像随手贴上去的 */
+  .sticker-footer img:nth-child(even) { transform: rotate(5deg); }
+}
+
+/* 动图装饰正是这个偏好要治的东西，不显示 */
+@media (prefers-reduced-motion: reduce) {
+  .sticker-footer { display: none; }
 }
 
 .back {
