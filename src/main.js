@@ -42,9 +42,14 @@ function hideLoader() {
   const wait = Math.max(0, LOADER_MIN_MS - (Date.now() - loaderStart))
   setTimeout(() => {
     const loader = document.getElementById('loader')
-    if (!loader) return
-    loader.classList.add('hide')
-    setTimeout(() => loader.remove(), 500)
+    if (loader) {
+      loader.classList.add('hide')
+      setTimeout(() => loader.remove(), 500)
+    }
+    /* ★ 告诉首页：加载页开始淡出了，开场（帘布 / 浮现 / 打字）从这一刻才开始。
+       否则帘布会在加载页背后"偷偷开完"，用户看到的就是"帘子直接拉开了"。 */
+    window.__loaderDone = true
+    window.dispatchEvent(new Event('loader-done'))
   }, wait)
 }
 

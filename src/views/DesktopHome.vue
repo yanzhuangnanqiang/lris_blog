@@ -329,21 +329,32 @@ onMounted(() => {
   window.addEventListener('touchmove', onMove, { passive: false })
   window.addEventListener('touchend', onDragEnd)
 
-  if (playIntro) {
+  /* 开场（帘布 / 浮现 / 打字）必须等**加载页撤了**才开始。
+     否则帘布会在加载页背后偷偷开完，用户看到的就是"帘子直接拉开了"。
+     main.js 在开始淡出加载页时派发 loader-done。 */
+  function startIntro() {
     setTimeout(() => { curtainOpen.value = true }, 800)
-    // 帘布 800ms 起滑、1.8s 滑完；内容提前到 1600ms 开始浮现 ——
-    // 这时帘布滑到一半、两侧已经让开了，看起来像"被帘布揭开"
+    // 帘布 1.8s 滑完；内容提前到 1600ms 浮现 —— 这时帘布已让开，像"被帘布揭开"
     setTimeout(() => { contentShown.value = true }, 1600)
+    // 等「帘布让开(1600) + 内容浮现完(0.6s)」再打字，否则字是在不可见的内容里打完的
+    setTimeout(() => startTyping(), 3200)
   }
 
-  // 打字跟着开场走（和帘布同一套规则）：刷新 / 新开标签打一次；
-  // 从别的页切回首页不打 —— 那时内容直接显示，不该再让人等一遍打字。
   if (reduceMotion || !playIntro) {
+    // 不演开场（切回首页 / 减弱动态）：直接显示全文
     typedLine1.value = fullLine1
     typedLine2.value = fullLine2
+  } else if (window.__loaderDone) {
+    startIntro()
   } else {
-    // 等「帘布让开(1600) + 内容浮现完(0.6s)」之后再打字，否则字是在不可见的内容里打完的
-    setTimeout(() => startTyping(), 3200)
+    let started = false
+    const run = () => {
+      if (started) return
+      started = true
+      startIntro()
+    }
+    window.addEventListener('loader-done', run, { once: true })
+    setTimeout(run, 6000) // 兜底：加载页万一出异常不发事件，也不能永远不演开场
   }
 })
 
