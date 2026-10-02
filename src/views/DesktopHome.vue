@@ -163,8 +163,8 @@ const mistRef = ref(null)
 const scrollProgress = ref(0)
 const mistLifted = ref(false)
 
-// 打字沿用站点原有的「同一会话只播一次」；帘布另用页面级 introPlayed（见普通 script 块）
-const TYPED_KEY = 'homeTyped'
+// 打字原先用 sessionStorage「同一会话只播一次」，现改成跟着开场走
+// （和帘布共用页面级 introPlayed，见上面的普通 script 块）
 const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
 const curtainOpen = ref(reduceMotion || introPlayed)
 /* 内容浮现：**等帘布滑完再开始**（帘布 800ms 起滑、1.8s 滑完）。
@@ -336,15 +336,14 @@ onMounted(() => {
     setTimeout(() => { contentShown.value = true }, 1600)
   }
 
-  // 打字沿用原来的「同一会话只播一次」，不随帘布一起重置；
-  // 开场时推迟到帘布开完再打
-  if (reduceMotion || sessionStorage.getItem(TYPED_KEY)) {
+  // 打字跟着开场走（和帘布同一套规则）：刷新 / 新开标签打一次；
+  // 从别的页切回首页不打 —— 那时内容直接显示，不该再让人等一遍打字。
+  if (reduceMotion || !playIntro) {
     typedLine1.value = fullLine1
     typedLine2.value = fullLine2
   } else {
-    // 开场时等「帘布滑完(2600) + 内容浮现完(0.6s)」再打字，否则字是在不可见的内容里打的
-    const typingDelay = playIntro ? 3200 : 600
-    setTimeout(() => startTyping().then(() => sessionStorage.setItem(TYPED_KEY, '1')), typingDelay)
+    // 等「帘布让开(1600) + 内容浮现完(0.6s)」之后再打字，否则字是在不可见的内容里打完的
+    setTimeout(() => startTyping(), 3200)
   }
 })
 
